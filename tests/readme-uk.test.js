@@ -74,3 +74,18 @@ test('the Ukrainian README tells about the hero line, health, gold, and items', 
   assert.match(uk, /Смуга внизу показує/);
   for (const word of ['здоровʼя', 'золото', 'предмет']) assert.ok(uk.includes(word), word);
 });
+
+test('the Ukrainian README tells how much of the ladder is built, derived from the registry', async () => {
+  const { QUESTS } = await import('../quests/index.js');
+  const { ladderStatus, LADDER_QUEST_COUNT } = await import('../quests/curriculum.js');
+  const uk = read('README.uk.md');
+  const intro = uk.slice(0, uk.indexOf('## Як грати'));
+  if (ladderStatus().complete) {
+    assert.doesNotMatch(uk, /будується/);
+  } else {
+    assert.match(intro, /будується/);
+    assert.match(intro, new RegExp(`${QUESTS.length} із ${LADDER_QUEST_COUNT}`));
+    assert.match(intro, /бос/);
+    assert.doesNotMatch(intro, /Пройди кампанію, і матимеш/);
+  }
+});

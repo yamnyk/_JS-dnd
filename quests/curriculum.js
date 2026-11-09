@@ -33,6 +33,9 @@ export const SUBJECTS = [
   { id: 'event-loop', rung: 6 },
 ];
 
+// How many quests the whole ladder holds: every subject at every tier, the opening, and the capstone.
+export const LADDER_QUEST_COUNT = SUBJECTS.length * TIERS.length + 2;
+
 // Which slots of the ladder are filled by the given quests. `complete` is true only when the opening quest,
 // every subject at every tier, and the capstone all exist.
 export function ladderStatus(quests = QUESTS) {

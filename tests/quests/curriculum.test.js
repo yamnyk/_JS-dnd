@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { QUESTS } from '../../quests/index.js';
 import {
   LADDER_RUNGS,
+  LADDER_QUEST_COUNT,
   OPENING_ID,
   CAPSTONE_ID,
   TIERS,
@@ -135,4 +136,9 @@ test('a duplicate slot or a quest with an unknown subject does not complete the 
   const bogus = full.map((q) => (q.id === 'values-easy' ? { ...q, subject: 'nonsense' } : q));
   assert.equal(ladderStatus(bogus).complete, false);
   assert.deepEqual(ladderStatus(bogus).missing, [{ subject: 'values', tier: 'easy' }]);
+});
+
+test('the whole ladder is 53 quests: 51 in the grid, the opening, and the capstone', () => {
+  assert.equal(LADDER_QUEST_COUNT, 53);
+  assert.equal(LADDER_QUEST_COUNT, fullLadder().length);
 });

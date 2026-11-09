@@ -81,3 +81,20 @@ test('the README tells players about the hero line, health, gold, and items, and
   assert.match(scripts, /node game\/cli\.js item list/);
   assert.ok(readme.includes('Hero line and vitals'), 'the feature table has no row for the hero line');
 });
+
+// A claim about how much of the ladder exists is derived from the registry, so it cannot go stale.
+test('the README tells how much of the ladder is built, and only says the campaign is finished when it is', async () => {
+  const { QUESTS } = await import('../quests/index.js');
+  const { ladderStatus, LADDER_QUEST_COUNT } = await import('../quests/curriculum.js');
+  const intro = readme.slice(at('A D&D-style adventure'), at('\n## How to play'));
+  if (ladderStatus().complete) {
+    assert.doesNotMatch(readme, /being built/i);
+  } else {
+    assert.match(intro, /being built/i);
+    assert.match(intro, new RegExp(`${QUESTS.length} of ${LADDER_QUEST_COUNT} quests`));
+    assert.match(intro, /final boss/i);
+    assert.doesNotMatch(intro, /Finish the campaign and you have/);
+    const row = readme.split('\n').find((l) => l.includes('Curriculum from strings to async'));
+    assert.match(row, new RegExp(`${QUESTS.length} of ${LADDER_QUEST_COUNT}`));
+  }
+});
