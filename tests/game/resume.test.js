@@ -13,7 +13,7 @@ import { beginFight, heroAttack } from '../../game/combat-engine.js';
 import { grantItem } from '../../game/inventory.js';
 import { resumeState, stateLine } from '../../game/resume.js';
 import { QUESTS } from '../../quests/index.js';
-import { markSolved } from './helpers.js';
+import { markSolved, rungQuests } from './helpers.js';
 import { SETTING, goodWorld } from './world-fixtures.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -166,8 +166,8 @@ test('the quests part of the resume state is small: counts, the rung to play, th
     solved: 0,
     total: QUESTS.length,
     rung: 1,
-    open: QUESTS.map((q) => q.id),
-    rungs: [{ rung: 1, solved: 0, total: QUESTS.length }],
+    open: rungQuests(1).map((q) => q.id),
+    rungs: [...new Set(QUESTS.map((q) => q.rung))].map((rung) => ({ rung, solved: 0, total: rungQuests(rung).length })),
     ladderComplete: false,
   });
   assert.equal('remaining' in quests, false, 'the long list of every unsolved id is gone');

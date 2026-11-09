@@ -243,5 +243,173 @@ export function mergeDeep(a, b) {
       ],
       specific: ['Neither input is changed.', 'Arrays are replaced, not merged.'],
     },
+    'logic-fizzbuzz': {
+      title: 'Fizz and Buzz',
+      brief:
+        "Write a function fizzBuzz(n). It receives a whole number of 1 or more and returns a string. When n is a multiple of both 3 and 5, return 'FizzBuzz'. When it is a multiple of 3 only, return 'Fizz'. When it is a multiple of 5 only, return 'Buzz'. For any other number, return the number as a string, for example '7'.",
+      stub: `// Quest: fizz and buzz.
+// Export fizzBuzz(n): return 'FizzBuzz' for a multiple of 3 and 5, 'Fizz' for a multiple of 3 only,
+// 'Buzz' for a multiple of 5 only, and otherwise the number as a string.
+export function fizzBuzz(n) {
+  // your code here
+}
+`,
+      expected: [
+        "`fizzBuzz(3)` gives `'Fizz'`",
+        "`fizzBuzz(10)` gives `'Buzz'`",
+        "`fizzBuzz(15)` gives `'FizzBuzz'`",
+        "`fizzBuzz(7)` gives `'7'`",
+      ],
+      specific: ['Check the multiple-of-both case first.', "The last case returns a string, not a number: '7', not 7."],
+    },
+    'logic-leap-year': {
+      title: 'Leap year',
+      brief:
+        'Write a function isLeapYear(year). It receives a whole year number of 1 or more and returns true or false. A year is a leap year when it divides evenly by 4. The exception is a year that divides evenly by 100: that is not a leap year, unless it also divides evenly by 400, and then it is.',
+      stub: `// Quest: leap year.
+// Export isLeapYear(year): return true for a leap year and false for any other year.
+// Divisible by 4 is a leap year, except divisible by 100 is not, unless also divisible by 400 it is.
+export function isLeapYear(year) {
+  // your code here
+}
+`,
+      expected: [
+        '`isLeapYear(2024)` gives `true`',
+        '`isLeapYear(1900)` gives `false`',
+        '`isLeapYear(2000)` gives `true`',
+        '`isLeapYear(2023)` gives `false`',
+      ],
+      specific: ['Use one boolean expression or a short if chain.', 'No lookup table of years.'],
+    },
+    'logic-shipping-fee': {
+      title: 'Shipping fee',
+      brief:
+        "Write a function shippingFee(order). The order is an object with weightKg (a number), express (true or false, and it may be missing), and country (text, and it may be missing). Return the fee as a number. Start from the weight: up to and including 1 kg costs 5, above 1 kg up to and including 5 kg costs 9, and above 5 kg costs 15. If express is true, multiply the fee by 1.5. After that, if the country is exactly 'PT', take 2 off, and the fee never goes below 0. Any other country, or a missing one, changes nothing. When weightKg is not a number above 0 (zero, a negative number, NaN, text, or missing), return null. Do not change the order object.",
+      stub: `// Quest: shipping fee.
+// Export shippingFee({ weightKg, express, country }): return the fee as a number.
+// Up to 1 kg costs 5, up to 5 kg costs 9, above 5 kg costs 15. express: true multiplies the fee by 1.5.
+// Then country 'PT' takes 2 off, never below 0. A weightKg that is not a number above 0 gives null.
+// Do the express step before the country step. Do not change the order object.
+export function shippingFee({ weightKg, express, country }) {
+  // your code here
+}
+`,
+      expected: [
+        "`shippingFee({ weightKg: 2, express: false, country: 'US' })` gives `9`",
+        "`shippingFee({ weightKg: 2, express: true, country: 'PT' })` gives `11.5`",
+        '`shippingFee({ weightKg: -1 })` gives `null`',
+      ],
+      specific: [
+        'Apply the express step before the country discount. The order is in the spec, do not guess it.',
+        'A weight like 0, -1, NaN, or the text "2" is not a number above 0, so it gives null.',
+      ],
+    },
+    'loops-countdown': {
+      title: 'Count down',
+      brief:
+        'Write a function countdown(from). It receives a whole number and returns a new array that counts down from it to 1, biggest first, each number once. When from is 0 or less, it returns an empty array.',
+      stub: `// Quest: count down.
+// Export countdown(from): return an array counting down from "from" to 1.
+// A "from" of 0 or less gives an empty array.
+export function countdown(from) {
+  // your code here
+}
+`,
+      expected: ['`countdown(3)` gives `[3, 2, 1]`', '`countdown(0)` gives `[]`'],
+      specific: ['Use a loop.', 'A fixed lookup of answers is caught by the generated inputs.'],
+    },
+    'loops-primes': {
+      title: 'Find the primes',
+      brief:
+        'Write a function primesUpTo(n). It receives a whole number and returns an array of every prime number from 2 up to n, smallest first. When n itself is prime, it is included. When n is less than 2, it returns an empty array. n can be as large as 5000, and your code is stopped after a few seconds, so it has to be fast.',
+      stub: `// Quest: find the primes.
+// Export primesUpTo(n): return every prime from 2 up to n, smallest first.
+// n itself counts when it is prime. An n below 2 gives an empty array.
+export function primesUpTo(n) {
+  // your code here
+}
+`,
+      expected: ['`primesUpTo(10)` gives `[2, 3, 5, 7]`', '`primesUpTo(1)` gives `[]`'],
+      specific: [
+        'Large n, up to 5000, must finish fast.',
+        'Stop testing divisors at the square root of the candidate.',
+      ],
+    },
+    'loops-collatz': {
+      title: 'Count the steps',
+      brief:
+        'Write a function collatzSteps(n). It receives a whole number and counts how many steps it takes to reach 1. In each step, an even number is halved and an odd number becomes 3 times itself plus 1. An n of 1 gives 0. Any n below 1 gives -1. The tests stay below 10000.',
+      stub: `// Quest: count the steps.
+// Export collatzSteps(n): count the steps to reach 1.
+// Each step: an even number is halved, an odd number becomes 3n + 1.
+// An n of 1 gives 0. An n below 1 gives -1.
+export function collatzSteps(n) {
+  // your code here
+}
+`,
+      expected: [
+        '`collatzSteps(6)` gives `8`',
+        '`collatzSteps(1)` gives `0`',
+        '`collatzSteps(27)` gives `111`',
+        '`collatzSteps(0)` gives `-1`',
+      ],
+      specific: [
+        'A while loop fits better than a for loop here.',
+        'Deal with an n below 1 before the loop starts, or the loop never ends.',
+      ],
+    },
+    'functions-clamp': {
+      title: 'Keep it in range',
+      brief:
+        'Write a function clamp(value, min, max). It returns value when value is between min and max. When value is below min it returns min, and when value is above max it returns max. A value equal to min or max is returned as it is. min is never above max, and the two may be the same number. The numbers can be negative or have decimals.',
+      stub: `// Quest: keep it in range.
+// Export clamp(value, min, max): keep value inside the range from min to max.
+// Below min gives min, above max gives max, anything in between comes back as it is.
+export function clamp(value, min, max) {
+  // your code here
+}
+`,
+      expected: ['`clamp(15, 0, 10)` gives `10`', '`clamp(-3, 0, 10)` gives `0`', '`clamp(5, 0, 10)` gives `5`'],
+      specific: ['Do not mutate anything. Just return the number.', 'A call with min above max is not tested.'],
+    },
+    'functions-apply-n': {
+      title: 'Apply it again and again',
+      brief:
+        'Write a function applyN(fn, value, times = 1). It calls fn on value, then calls fn on that result, and so on, times calls in total, and returns the final result. fn is called with exactly one argument. times is optional and is 1 when it is left out. A times of 0 returns value as it is and never calls fn. times is always a whole number from 0 up. value can be any kind of value.',
+      stub: `// Quest: apply it again and again.
+// Export applyN(fn, value, times = 1): call fn on value, then on that result, times calls in total.
+// Return the final result. fn gets exactly one argument. A times of 0 returns value and never calls fn.
+export function applyN(fn, value, times = 1) {
+  // your code here
+}
+`,
+      expected: [
+        '`applyN((x) => x * 2, 1, 3)` gives `8`',
+        '`applyN((x) => x + 1, 5)` gives `6`',
+        '`applyN((x) => x + 1, 5, 0)` gives `5`',
+      ],
+      specific: [
+        'The default parameter is the point: write the default in the parameter list, as the starter file shows.',
+        'Call fn with the value only, and no more often than times.',
+      ],
+    },
+    'functions-compose': {
+      title: 'Compose functions',
+      brief:
+        'Write a function compose(...fns). It takes any number of functions and returns a new function. The new function takes one argument and runs the functions from right to left: the last function gets the argument, the one to its left gets that result, and so on, and the result of the first function is returned. Each function is called once per call, with exactly one argument. compose itself calls none of them, they run only when the new function is called. With no functions, the new function returns its argument unchanged. The new function can be called many times and gives the same answer each time. It is only ever called with one argument, so more than one is not tested.',
+      stub: `// Quest: compose functions.
+// Export compose(...fns): return a new function that runs fns from right to left.
+// compose(f, g)(x) is f(g(x)). With no functions, the new function returns its argument unchanged.
+export function compose(...fns) {
+  // your code here
+}
+`,
+      expected: [
+        '`compose((x) => x * 2, (x) => x + 1)(3)` gives `8`',
+        '`compose((x) => x + 1, (x) => x * 2)(3)` gives `7`',
+        '`compose()(5)` gives `5`',
+      ],
+      specific: ['Do not use eval.', 'Read right to left: the last function you receive runs first.'],
+    },
   },
 };

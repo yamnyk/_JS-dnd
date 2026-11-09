@@ -11,6 +11,15 @@ import arraysRotate from './arrays-rotate.js';
 import objectsFullName from './objects-full-name.js';
 import objectsCountWords from './objects-count-words.js';
 import objectsMergeDeep from './objects-merge-deep.js';
+import logicFizzbuzz from './logic-fizzbuzz.js';
+import logicLeapYear from './logic-leap-year.js';
+import logicShippingFee from './logic-shipping-fee.js';
+import loopsCountdown from './loops-countdown.js';
+import loopsPrimes from './loops-primes.js';
+import loopsCollatz from './loops-collatz.js';
+import functionsClamp from './functions-clamp.js';
+import functionsApplyN from './functions-apply-n.js';
+import functionsCompose from './functions-compose.js';
 
 // The fixed quest list, in play order: by rung, the opening first, then subject, then easy to hard
 // (quests/curriculum.js pins the order). Checks live in the repo; the Master only reskins the story.
@@ -28,6 +37,15 @@ export const QUESTS = [
   objectsFullName,
   objectsCountWords,
   objectsMergeDeep,
+  logicFizzbuzz,
+  logicLeapYear,
+  logicShippingFee,
+  loopsCountdown,
+  loopsPrimes,
+  loopsCollatz,
+  functionsClamp,
+  functionsApplyN,
+  functionsCompose,
 ];
 
 export const getQuest = (id) => QUESTS.find((quest) => quest.id === id);

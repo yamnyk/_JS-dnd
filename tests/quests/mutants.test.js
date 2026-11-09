@@ -97,3 +97,35 @@ test('a rotate that returns undefined entries is shown undefined, not null', () 
   assert.match(result.got, /undefined/);
   assert.doesNotMatch(result.got, /null/);
 });
+
+// The messages about how often and how a function is called are words, so they come from the catalogs.
+const runIn = (id, code, lang) => {
+  const file = join(dir, `mutant-${n++}.js`);
+  writeFileSync(file, code);
+  return runQuestCheck(id, file, { timeoutMs: 15000, lang });
+};
+const EXTRA_CALL =
+  'export function applyN(fn, value, times = 1) { fn(value); let v = value; for (let i = 0; i < times; i++) v = fn(v); return v; }';
+const TWO_ARGUMENTS =
+  'export function applyN(fn, value, times = 1) { let v = value; for (let i = 0; i < times; i++) v = fn(v, i); return v; }';
+
+test('an applyN that calls fn one time too many says so in English from the catalog', () => {
+  const result = runIn('functions-apply-n', EXTRA_CALL, 'en');
+  assert.equal(result.status, 'fail');
+  assert.match(result.expected + result.got, /number of calls to fn/);
+});
+
+test('the same failure is told in Ukrainian, with no English sentence left in it', () => {
+  const result = runIn('functions-apply-n', EXTRA_CALL, 'uk');
+  assert.equal(result.status, 'fail');
+  assert.match(result.expected + result.got, /кількість викликів/);
+  assert.doesNotMatch(result.expected + result.got, /number of calls/);
+});
+
+test('an applyN that gives fn a second argument is told so in both languages', () => {
+  const english = runIn('functions-apply-n', TWO_ARGUMENTS, 'en');
+  assert.equal(english.status, 'fail');
+  assert.match(english.expected + english.got, /exactly 1 argument|2 arguments/);
+  const ukrainian = runIn('functions-apply-n', TWO_ARGUMENTS, 'uk');
+  assert.match(ukrainian.expected + ukrainian.got, /аргумент/);
+});

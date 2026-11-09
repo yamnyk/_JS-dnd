@@ -14,7 +14,7 @@ import { setSetting, fillWorld } from '../../game/world.js';
 import { getHonor, getHonorHistory } from '../../game/honor.js';
 import { applyHonorRule } from '../../game/honor-rules.js';
 import { applyTamperReset } from '../../game/reset.js';
-import { freshDb, count, markSolved, markSolvedBefore } from './helpers.js';
+import { freshDb, count, markSolved, markSolvedBefore, rungQuests } from './helpers.js';
 import { SETTING, goodWorld } from './world-fixtures.js';
 
 const solutions = join(resolve(dirname(fileURLToPath(import.meta.url))), '..', 'quests', 'solutions');
@@ -193,8 +193,14 @@ test('getProgress lists solved, remaining, and open in registry order, with a su
     epoch: 0,
     solved: ['dice-roll'],
     remaining: QUESTS.map((q) => q.id).filter((id) => id !== 'dice-roll'),
-    open: QUESTS.map((q) => q.id).filter((id) => id !== 'dice-roll'),
-    rungs: [{ rung: 1, solved: 1, total: QUESTS.length }],
+    open: rungQuests(1)
+      .map((q) => q.id)
+      .filter((id) => id !== 'dice-roll'),
+    rungs: [...new Set(QUESTS.map((q) => q.rung))].map((rung) => ({
+      rung,
+      solved: rung === 1 ? 1 : 0,
+      total: rungQuests(rung).length,
+    })),
     total: QUESTS.length,
   });
 });
@@ -296,7 +302,7 @@ test('the quests of rung 1 are open from the start, in any order', () => {
   assert.equal(checkQuest(db, saveId, 'array-sum', opts).status, 'pass');
   put('string-shout');
   assert.equal(checkQuest(db, saveId, 'string-shout', opts).status, 'pass');
-  assert.equal(getProgress(db, saveId).open.length, QUESTS.length);
+  assert.equal(getProgress(db, saveId).open.length, rungQuests(1).length);
 });
 
 test('after a tamper reset the solves of the old epoch no longer count and every quest is open and unsolved again', () => {
@@ -309,7 +315,7 @@ test('after a tamper reset the solves of the old epoch no longer count and every
   assert.deepEqual(progress.solved, []);
   assert.deepEqual(
     progress.open,
-    QUESTS.map((q) => q.id),
+    rungQuests(1).map((q) => q.id),
   );
 });
 

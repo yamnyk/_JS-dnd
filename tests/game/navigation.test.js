@@ -11,7 +11,7 @@ import { applyTamperReset } from '../../game/reset.js';
 import { setLanguage } from '../../game/i18n.js';
 import { questText } from '../../quests/text/index.js';
 import { beginFight, heroAttack } from '../../game/combat-engine.js';
-import { freshDb, markSolved, standInLadder } from './helpers.js';
+import { freshDb, markSolved, standInLadder, rungQuests } from './helpers.js';
 import { QUESTS } from '../../quests/index.js';
 import { SETTING, goodWorld } from './world-fixtures.js';
 
@@ -107,7 +107,9 @@ test('N1 offers the first open quest of rung 1 and lists the other open ones', (
   assert.equal(result.offer.questId, 'dice-roll');
   assert.deepEqual(
     result.open.map((q) => [q.questId, q.tier]),
-    QUESTS.slice(1).map((q) => [q.id, q.tier]),
+    rungQuests(1)
+      .slice(1)
+      .map((q) => [q.id, q.tier]),
   );
   assert.ok(result.open.every((q) => q.title));
 });
@@ -116,25 +118,31 @@ test('a solved quest is no longer offered, the next open one is, and nothing is 
   const { db, saveId, solve } = ready();
   solve('dice-roll');
   const second = talk(db, saveId, 'N1');
-  assert.equal(second.offer.questId, QUESTS[1].id);
+  assert.equal(second.offer.questId, rungQuests(1)[1].id);
   assert.deepEqual(
     second.open.map((q) => q.questId),
-    QUESTS.slice(2).map((q) => q.id),
+    rungQuests(1)
+      .slice(2)
+      .map((q) => q.id),
   );
-  for (const quest of QUESTS.slice(1)) markSolved(db, saveId, quest.id);
+  for (const quest of rungQuests(1).slice(1)) markSolved(db, saveId, quest.id);
   const done = talk(db, saveId, 'N1');
   assert.equal(done.offer, null);
   assert.deepEqual(done.open, []);
 });
 
-test('N2 has nothing to offer while no rung 2 quest is built, and it does not borrow rung 1 quests', () => {
-  const { db, saveId, solve } = ready();
+test('N2 offers nothing while rung 1 is not done, and then offers the first rung 2 quest and lists the rest', () => {
+  const { db, saveId } = ready();
   go(db, saveId, 'L2');
   assert.deepEqual([talk(db, saveId, 'N2').offer, talk(db, saveId, 'N2').open], [null, []]);
-  go(db, saveId, 'L1');
-  solve('dice-roll');
-  go(db, saveId, 'L2');
-  assert.equal(talk(db, saveId, 'N2').offer, null);
+  for (const q of rungQuests(1).filter((q) => q.id === 'dice-roll' || q.tier !== 'hard')) markSolved(db, saveId, q.id);
+  const result = talk(db, saveId, 'N2');
+  const rung2 = rungQuests(2).map((q) => q.id);
+  assert.equal(result.offer.questId, rung2[0]);
+  assert.deepEqual(
+    result.open.map((q) => q.questId),
+    rung2.slice(1),
+  );
 });
 
 test('after a tamper reset gating starts over', () => {
@@ -155,9 +163,13 @@ test('with a complete ladder N2 offers nothing until rung 1 is done, then offers
     markSolved(db, saveId, q.id);
   }
   const result = talk(db, saveId, 'N2', { quests });
-  assert.equal(result.offer.questId, 'conditionals-easy');
+  const rung2 = quests.filter((q) => q.rung === 2).map((q) => q.id);
+  assert.equal(result.offer.questId, rung2[0]);
   assert.equal(result.open.length, 8);
-  assert.ok(result.open.every((q) => ['conditionals', 'loops', 'functions'].some((s) => q.questId.startsWith(s))));
+  assert.deepEqual(
+    result.open.map((q) => q.questId),
+    rung2.slice(1),
+  );
 });
 
 test('with a complete ladder N7 offers the final exam only when the other 52 quests are solved', () => {

@@ -45,6 +45,19 @@ export const wrongResult = (call, wanted, gave) => {
   };
 };
 
+// How often a function was called by the player's code, and with how many arguments.
+export const wrongCallCount = (call, wanted, gave) => ({
+  pass: false,
+  expected: part('check.callCount.expected', { call, wanted: show(wanted) }),
+  got: part('check.callCount.got', { call, gave: show(gave) }),
+});
+
+export const wrongArgCount = (call, gave) => ({
+  pass: false,
+  expected: part('check.argCount.expected', { call }),
+  got: part('check.argCount.got', { call, gave: show(gave) }),
+});
+
 export const outOfRange = (call, max, gave) => ({
   pass: false,
   expected: part('check.outOfRange.expected', { call, max: shown(max) }),

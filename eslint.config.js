@@ -32,6 +32,15 @@ export const playerFacing = [
   'quests/objects-full-name.js',
   'quests/objects-count-words.js',
   'quests/objects-merge-deep.js',
+  'quests/logic-fizzbuzz.js',
+  'quests/logic-leap-year.js',
+  'quests/logic-shipping-fee.js',
+  'quests/loops-countdown.js',
+  'quests/loops-primes.js',
+  'quests/loops-collatz.js',
+  'quests/functions-clamp.js',
+  'quests/functions-apply-n.js',
+  'quests/functions-compose.js',
   'quests/style.js',
 ];
 

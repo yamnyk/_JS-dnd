@@ -7,7 +7,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openGameDb } from '../../game/db.js';
 import { sealDice } from '../../game/integrity.js';
-import { count, markSolved, markSolvedBefore } from './helpers.js';
+import { count, markSolved, markSolvedBefore, rungQuests } from './helpers.js';
 import { checkQuest, judgeQuest } from '../../game/quests.js';
 import { beginFight, heroAttack } from '../../game/combat-engine.js';
 import { QUESTS } from '../../quests/index.js';
@@ -230,7 +230,7 @@ test('quest list shows every quest of the open rung unsolved with complexity', (
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(
     result.json.quests.map((q) => [q.id, q.solved]),
-    QUESTS.map((q) => [q.id, false]),
+    rungQuests(1).map((q) => [q.id, false]),
   );
   assert.ok(result.json.quests.every((q) => q.complexity >= 1));
 });
@@ -1031,7 +1031,7 @@ test('quest start, check, and list print the real file path under the player fol
   const files = game.run('quest', 'list').json.quests.map((q) => q.file);
   assert.deepEqual(
     files,
-    QUESTS.map((q) => where(q.id)),
+    rungQuests(1).map((q) => where(q.id)),
   );
 });
 
@@ -1359,14 +1359,16 @@ test('quest list shows the open unsolved quests with subject and tier, and quest
   const fresh = game.run('quest', 'list').json;
   assert.deepEqual(
     fresh.quests.map((q) => [q.id, q.subject, q.tier]),
-    QUESTS.map((q) => [q.id, q.subject, q.tier]),
+    rungQuests(1).map((q) => [q.id, q.subject, q.tier]),
   );
   assert.deepEqual(fresh.progress, { solved: 0, total: QUESTS.length });
   markSolved(game.db(), 1, 'dice-roll');
   const after = game.run('quest', 'list').json;
   assert.deepEqual(
     after.quests.map((q) => q.id),
-    QUESTS.map((q) => q.id).filter((id) => id !== 'dice-roll'),
+    rungQuests(1)
+      .map((q) => q.id)
+      .filter((id) => id !== 'dice-roll'),
   );
   assert.deepEqual(after.progress, { solved: 1, total: QUESTS.length });
   const all = game.run('quest', 'list', 'all').json;

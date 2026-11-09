@@ -42,6 +42,15 @@ Rules to hold the text to:
 - [ ] `objects-full-name` : title, brief, starter file comments, expected examples, specific style directions.
 - [ ] `objects-count-words` : title, brief, starter file comments, expected examples, specific style directions.
 - [ ] `objects-merge-deep` : title, brief, starter file comments, expected examples, specific style directions.
+- [ ] `logic-fizzbuzz` : title, brief, starter file comments, expected examples, specific style directions.
+- [ ] `logic-leap-year` : title, brief, starter file comments, expected examples, specific style directions.
+- [ ] `logic-shipping-fee` : title, brief, starter file comments, expected examples, specific style directions.
+- [ ] `loops-countdown` : title, brief, starter file comments, expected examples, specific style directions.
+- [ ] `loops-primes` : title, brief, starter file comments, expected examples, specific style directions.
+- [ ] `loops-collatz` : title, brief, starter file comments, expected examples, specific style directions.
+- [ ] `functions-clamp` : title, brief, starter file comments, expected examples, specific style directions.
+- [ ] `functions-apply-n` : title, brief, starter file comments, expected examples, specific style directions.
+- [ ] `functions-compose` : title, brief, starter file comments, expected examples, specific style directions.
 - Rung 1 terms to double check: "шаблонний рядок (template literal)" is not in the glossary, and "Глибоке злиття", "Зсув ліворуч", "Кількість з підписом", "сурогатні пари", "звичайні обʼєкти" were chosen by the drafter. The three older quests do not write the English term in brackets at first use, the new ones do: pick one convention.
 
 Each new quest adds a row here. The code in a starter file is identical to the English one, only the comments are Ukrainian.

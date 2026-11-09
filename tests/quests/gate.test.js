@@ -107,7 +107,15 @@ test('a revoked solve closes what depended on it again', () => {
   );
 });
 
-test('with the registry that exists today every quest is on rung 1 and open from the start', async () => {
+test('with the real registry rung 1 is open from the start and rung 2 opens when rung 1 easy and medium are done', async () => {
   const { QUESTS } = await import('../../quests/index.js');
-  for (const quest of QUESTS) assert.equal(isQuestOpen(quest, []), true, quest.id);
+  const rung1 = QUESTS.filter((q) => q.rung === 1);
+  const rung2 = QUESTS.filter((q) => q.rung === 2);
+  assert.ok(rung1.length >= 13 && rung2.length >= 9);
+  for (const quest of rung1) assert.equal(isQuestOpen(quest, []), true, quest.id);
+  for (const quest of rung2) assert.equal(isQuestOpen(quest, []), false, quest.id);
+  const done = rung1.filter((q) => q.id === OPENING_ID || q.tier === 'easy' || q.tier === 'medium').map((q) => q.id);
+  for (const quest of rung2) assert.equal(isQuestOpen(quest, done), true, quest.id);
+  const missingOne = done.filter((id) => id !== 'objects-count-words');
+  for (const quest of rung2) assert.equal(isQuestOpen(quest, missingOne), false, quest.id);
 });

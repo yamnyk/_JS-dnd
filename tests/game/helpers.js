@@ -49,6 +49,9 @@ export function markSolvedBefore(db, saveId, questId) {
     markSolved(db, saveId, quest.id);
 }
 
+// The quests of one rung of the real registry, in play order.
+export const rungQuests = (rung) => QUESTS.filter((q) => q.rung === rung);
+
 // The real registry has only part of the ladder. This fills every missing slot with a stand-in quest, so
 // the rules that need a complete ladder (the boss, the ending) can be tested before it is all built.
 // The real quests keep their place. Stand-ins have no check, so they are solved with markSolved.
