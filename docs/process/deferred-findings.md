@@ -175,3 +175,13 @@ Legend for status: **open** means still true in the code, **fixed** means a late
   - `arrays-first-last` never checks that a new array is returned for `[]` (`return items` passes), although the brief says new array.
   - `tests/game/navigation.test.js` and `tests/game/cli.test.js` assume every registered quest is on rung 1 (`QUESTS.slice(1)`); they will fail loudly when rung 2 is registered and must be rewritten then.
   - The Ukrainian drafts still need the owner's review (checklist rows added).
+
+## Found by the review of rung 2 of the curriculum, 2026-11-09
+
+- Fixed: `loops-collatz` passed raw values to its failure message, so a solution returning the steps as text got identical expected and got lines. It now uses `show` like the other quests.
+- Deferred minors:
+  - An endless loop that keeps pushing to an array ends after about 2 seconds with the bare message "Invalid array length", status `error`, without naming the input (same for a sieve without a guard on a negative number, and `reduceRight` without an initial value on an empty `compose()`). It is the known "no try/catch around the player's call" pattern from rung 1.
+  - The call count messages in both catalogs say `fn`, but `compose` takes `fns`, so the message names a variable the player does not have there.
+  - The Ukrainian rung 2 entries are in a different key order from the English ones. Cosmetic.
+  - A solution using `times ?? 1` instead of a default parameter passes `functions-apply-n`. No check can see it, and the style line hands it to the Master's judgment.
+  - Lowercase `'pt'` and a truthy `express` are never tested, so lenient solutions pass. The brief says exactly `'PT'`.

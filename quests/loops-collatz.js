@@ -1,7 +1,7 @@
 import { missingExport, wrongResult, passed, show } from './messages.js';
 
 // The catalog examples, then the edges: 1 needs no steps, zero and every negative give -1, the smallest
-// steps (2, 3, 4), an odd start that never meets an odd number again (a power of two), and long climbs.
+// steps (2, 3, 4), a start that never meets an odd number again (a power of two), and long climbs.
 const FIXED = [6, 1, 27, 0, -1, -2, -7, -100, 2, 3, 4, 5, 7, 8, 9, 16, 97, 871, 1024, 6171];
 
 const pick = (n) => Math.floor(Math.random() * n);
@@ -33,7 +33,7 @@ export default {
     for (const n of cases) {
       const wanted = reference(n);
       const gave = mod.collatzSteps(n);
-      if (gave !== wanted) return wrongResult(`collatzSteps(${show(n)})`, wanted, gave);
+      if (gave !== wanted) return wrongResult(`collatzSteps(${show(n)})`, show(wanted), show(gave));
     }
     return passed('check.pass.everyTest');
   },

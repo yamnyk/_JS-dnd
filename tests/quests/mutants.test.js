@@ -129,3 +129,19 @@ test('an applyN that gives fn a second argument is told so in both languages', (
   const ukrainian = runIn('functions-apply-n', TWO_ARGUMENTS, 'uk');
   assert.match(ukrainian.expected + ukrainian.got, /аргумент/);
 });
+
+test('a collatz that returns the steps as text is shown quoted, so the player can see the difference', () => {
+  const code = `export function collatzSteps(n) {
+  if (n < 1) return String(-1);
+  let steps = 0;
+  while (n !== 1) {
+    n = n % 2 === 0 ? n / 2 : 3 * n + 1;
+    steps++;
+  }
+  return String(steps);
+}`;
+  const result = run('loops-collatz', code);
+  assert.equal(result.status, 'fail');
+  assert.notEqual(result.got, result.expected);
+  assert.match(result.got, /gave "/);
+});
