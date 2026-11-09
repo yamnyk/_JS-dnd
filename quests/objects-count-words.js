@@ -1,5 +1,5 @@
 import { isDeepStrictEqual } from 'node:util';
-import { missingExport, wrongResult, passed } from './messages.js';
+import { missingExport, wrongResult, passed, show } from './messages.js';
 
 const FIXED = [
   ['a', 'b', 'a'],
@@ -33,8 +33,6 @@ function sameCounts(gave, wanted) {
   const byKey = (a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0);
   return isDeepStrictEqual(Object.entries(gave).sort(byKey), Object.entries(wanted).sort(byKey));
 }
-
-const show = (value) => JSON.stringify(value) ?? String(value);
 
 // The title, brief, and starter file for this quest are in quests/text.
 export default {

@@ -8,6 +8,10 @@ const FIXED = [
   ['ab', 'ab'],
   ['hello', 'l'],
   ['ab c', 'b '],
+  // Spaces are characters like any other, also at the ends.
+  ['abc ', 'bc'],
+  [' abc', 'ab'],
+  ['  ', '  '],
 ];
 
 const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ';

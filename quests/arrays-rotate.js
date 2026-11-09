@@ -1,5 +1,5 @@
 import { isDeepStrictEqual } from 'node:util';
-import { missingExport, wrongResult, passed } from './messages.js';
+import { missingExport, wrongResult, passed, show } from './messages.js';
 
 const FIXED = [
   [[1, 2, 3, 4], 1],
@@ -21,7 +21,6 @@ const reference = (items, steps) => {
 const pick = (n) => Math.floor(Math.random() * n);
 const randomItems = () => Array.from({ length: pick(8) }, () => pick(41) - 20);
 const randomSteps = () => pick(25) - 12;
-const show = (value) => JSON.stringify(value) ?? String(value);
 
 // The title, brief, and starter file for this quest are in quests/text.
 export default {

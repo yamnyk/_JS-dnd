@@ -13,6 +13,23 @@ const shown = (value) => {
   }
 };
 
+// A value as the player's code would write it. JSON.stringify turns undefined and NaN into null and drops
+// undefined keys, which would tell a beginner "gave null" when the real value was undefined.
+export function show(value, seen = new Set()) {
+  if (value === undefined) return 'undefined';
+  if (typeof value === 'number') return Object.is(value, -0) ? '-0' : String(value);
+  if (typeof value === 'bigint') return `${value}n`;
+  if (typeof value === 'function') return 'function';
+  if (typeof value === 'string') return JSON.stringify(value);
+  if (value === null || typeof value !== 'object') return String(value);
+  if (seen.has(value)) return '...';
+  const inside = new Set(seen).add(value);
+  if (Array.isArray(value)) return `[${value.map((item) => show(item, inside)).join(',')}]`;
+  return `{${Object.entries(value)
+    .map(([key, item]) => `${JSON.stringify(key)}:${show(item, inside)}`)
+    .join(',')}}`;
+}
+
 export const missingExport = (name, type) => ({
   pass: false,
   expected: part('check.missingExport.expected', { name }),

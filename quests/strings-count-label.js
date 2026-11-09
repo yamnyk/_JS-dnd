@@ -8,6 +8,10 @@ const FIXED = [
   [1, 'dog', '1 dog'],
   [11, 'pear', '11 pears'],
   [100, 'coin', '100 coins'],
+  // Only add s, even after s, x, and y.
+  [2, 'bus', '2 buss'],
+  [5, 'box', '5 boxs'],
+  [3, 'city', '3 citys'],
 ];
 
 const letters = 'abcdefghijklmnopqrstuvwxyz';

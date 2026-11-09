@@ -1,5 +1,5 @@
 import { isDeepStrictEqual } from 'node:util';
-import { missingExport, wrongResult, passed } from './messages.js';
+import { missingExport, wrongResult, passed, show } from './messages.js';
 
 const FIXED = [
   [{ x: { y: 1, z: 2 } }, { x: { y: 9 } }],
@@ -46,8 +46,6 @@ function randomObject(depth) {
   }
   return result;
 }
-
-const show = (value) => JSON.stringify(value);
 
 // The title, brief, and starter file for this quest are in quests/text.
 export default {
