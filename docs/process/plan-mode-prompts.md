@@ -183,3 +183,70 @@ PROCESS
 - Update docs/process/deferred-findings.md statuses as part of the plan's last task, so the register stays the source of truth.
 - End with the execution handoff question (subagent-driven or native) and your recommendation.
 ```
+
+## Extra plan: Play harness follow-up (PR #14)
+
+A contributor's pull request (#14, branch `feature/harness-token-savings`) moves `/play` into a skill, adds a `resume` command, a play hook, a `move-smith` subagent, and `play.sh`. My review found problems and I made decisions. This plan applies them. Paste this into plan mode.
+
+```
+Read the review decisions below, then the PR itself: `gh pr view 14` and `gh pr diff 14` (read-only, the PR may or may not be merged yet). Then read CLAUDE.md, docs/superpowers/specs/2026-11-07-js-dnd-campaign-design.md, docs/superpowers/plans/2026-11-09-hero-status-bar.md, and docs/process/deferred-findings.md. Run `node dev/cli.js status` and read the current state first.
+
+GOAL
+Take the contributor's token-saving harness and make it safe and complete on top of the current game (languages, vitals, the sealed dice, the front door CLI). Cheaper turns are the point, but not at the price of breaking the tamper rules, the language, or the state the Master relies on. I told you to be extremely careful: I do not know this part of the harness well and I am trusting your judgment. A wrong move here can silently break every play session, so prefer small steps, prove each one with a test that failed first, and stop and ask when something is unclear.
+
+WHAT THE PR DOES (verify this against the diff, do not trust this summary)
+- `.claude/skills/play/` replaces `.claude/commands/play.md`: a core `SKILL.md` plus `onboarding.md`, `combat.md`, `stamina.md`, `ending.md`, `vitals.md` that the Master reads when the moment comes. `SKILL.md` runs the command `node game/cli.js resume` before the model sees the prompt and inlines its JSON.
+- `game/resume.js` (`resumeState`, `stateLine`), a `resume` case in `game/cli-main.js`, and an exit-0 path for `resume` in `game/cli.js` (the front door).
+- `game/play-hook.js` wired in `.claude/settings.json` for `UserPromptSubmit` and `SessionStart` with matcher `compact`. A `play_sessions` table (migration 14) marks which Claude Code sessions typed `/play`. Those sessions get a one-line `[game]` state line per prompt, and the full state after a compaction.
+- `.claude/agents/move-smith.md` (Sonnet, Bash only, `omitClaudeMd: true`) writes the hidden tests for advanced combat moves.
+- `play.sh` starts `claude --model sonnet` with `/play` as the first prompt.
+
+DECISIONS I ALREADY MADE (do not re-ask these)
+1. World writing gets its own subagent on Opus. The play session stays on Sonnet (set by `play.sh`), and a new `world-smith` agent (`.claude/agents/world-smith.md`, `model: opus`, `tools: Bash`, `omitClaudeMd: true`) writes the whole world: names and descriptions for all six locations, and names, descriptions, and voices for all seven NPCs including the final boss, in the setting's voice and the save's language, and submits it with `node game/cli.js world fill --data -` on stdin. The Master still runs the player conversation (race, class, scores, name, the setting choice) and hands world-smith the chosen setting (name, description, voice), the hero, and the language. World text is not secret, so unlike move-smith it may report what it wrote. The quality bar is the whole point of using Opus here: no slop, no AI-speak, real specificity per setting. It must follow the language pack (glossary, banned phrases, voice tips) returned by `lang show`.
+2. The auto-approval rule `Bash(node game/cli.js *)` does NOT go in the committed `.claude/settings.json`. Remove it from there. `play.sh` passes it on the command line as `--allowedTools "Bash(node game/cli.js *)"`, so only sessions started through `play.sh` get it. The skill's own `allowed-tools` frontmatter (a grant for the invoking turn only) stays. Documented behavior, from the Claude Code docs: `--allowedTools` is a per-invocation flag, a skill's `allowed-tools` clears when the player sends the next message, and a skill's `model` override lasts only for the current turn.
+3. Fix the hook crash risk. `game/play-hook.js` imports `resume.js`, which imports `combat-engine.js`, which pulls in the sealed `game/dice.js` and `game/rolls.js`. A static import failure happens before the hook's try/catch. Move the read-only fight reads (`openFight`, `getFightState`, and what they need) into a new `game/fight-state.js` that imports no sealed code, and have `combat-engine.js` and `resume.js` use it. Behavior of combat must not change at all. Pin it with a test like the existing status line tamper test: delete or break both sealed files, run the hook, and expect exit 0 and no stack trace. Note from the docs: a hook that exits 1 is a non-blocking error, only exit 2 blocks a prompt, so this is Minor in effect but cheap and worth doing.
+4. One source of truth for the game state. Move everything `cli-main.js` adds to the `resume` output (`language`, the language `pack` from `packFor`, `vitals` with the item count, `raceDisplay` and `classDisplay`) into `resumeState` in `game/resume.js`, so the `resume` command, the compaction dump, and the per-prompt line all share it. Add health and gold to the `[game]` line (for example `HP 9/12 | 15 gold`). Keep the line short: it is paid on every prompt.
+5. Chain log calls with `;` instead of `&&` in the skill text, and tell the Master to read both lines of output. A failed log call must not swallow the real action, and each part still matches the allow rule on its own.
+6. Drop the contributor's ending-test commit if it is still there: `pause` already exists in `tests/game/ending.test.js`, and the test did not flake on main in 8 of 8 runs. Verify, then remove it only if it is redundant.
+7. `omitClaudeMd` is a real documented subagent field (Claude Code v2.1.271 or later; unknown fields are ignored without an error). The README requirements must state the minimum Claude Code version that the features used need. Find out what each used feature needs from the docs instead of guessing, and say which ones are unverified.
+
+STEP 0: VERIFY BEFORE PLANNING
+For each claim above, read the current code and run a probe on a throwaway save (`JSDND_GAME_DB`, `JSDND_PLAYER_DIR` pointing at temp paths): the hook with a missing `game/dice.js`, the compaction output today versus `resume`, the `[game]` line today. Label every result: verified by running, inference only, or already fixed. If the PR is not merged yet you cannot run its code in this repo: say so, and plan against the diff, and ask me how I want to sequence it (see below).
+
+CONSTRAINTS
+- Commit and push yourself with plain messages. NEVER a `Co-Authored-By` line, a "Generated with Claude" line, or any Claude attribution in commits or PR text. Never force-push or rewrite pushed history without asking. Ask before other outward-facing actions, including any comment, review, or push on the contributor's PR or branch.
+- No em-dash and no en-dash anywhere: code, comments, docs, commit text, output.
+- `game/dice.js` and `game/rolls.js` are sealed in `game/dice.sha256`. Never edit or format them. A missing or broken one must still reach the front door tamper path (exit 2, reset) and must never crash `game/reset.js`, `game/statusline.js`, or the new hook.
+- Game state only in SQLite through scripts. Migrations are append-only: the PR's `play_sessions` is migration 14 and nothing already applied may change.
+- Player-facing and Master-facing text: English text for the Master brief stays English. Anything the player reads goes through `game/locales/{en,uk}.js` or `quests/text`. The ESLint guard `playerFacing` list in `eslint.config.js` must stay green and cover any new module that prints player text. New Ukrainian text goes on `docs/i18n/uk-review-checklist.md`.
+- Tests first for every change: write the test, watch it fail for the right reason, then fix, then run the whole suite, `npm run lint`, `npm run format:check`, and the dash scan. Name the production change that would make each test fail before writing it, and mutation-check the important ones.
+- Machine-readable surfaces stay stable: CLI command names, JSON keys of existing commands, DB columns, honor kinds, quest ids. `resume` is new, so its shape is yours to define, but write it down.
+- `.claude/skills/play/*.md` and `.claude/agents/*.md` are what the Master reads. They must say exactly what the scripts do. The existing tests in `tests/game/play-command.test.js` pin the brief; extend them instead of loosening them.
+- Keep each change as small as its reason. No refactors for taste.
+
+ASK ME BEFORE ASSUMING: USE AskUserQuestion, ONE DECISION AT A TIME OR SMALL RELATED GROUPS, WITH YOUR RECOMMENDATION FIRST. DO NOT WRITE THE PLAN UNTIL THESE ARE ANSWERED:
+1. Sequencing. The PR is the contributor's branch. Options: I merge it first and you plan a follow-up on main; you plan changes the contributor applies on his branch (I post your review comment); or you apply the changes on main after merging. Recommend one and say what each costs, including who gets to commit what.
+2. world-smith failure path. If Opus is not available on a player's plan or the call fails, what should happen? Options: the Master writes the world itself on the session model, the Master tells the player and stops, or world-smith falls back to Sonnet. Recommend one.
+3. world-smith inputs and output. What exactly does the Master hand over, what does the agent run first (`world skeleton`, `lang show`), what does it report back (names only, or a short summary), and how does the Master then describe the arrival? Show me a draft of the agent file text before the plan is final, because its prompt decides the quality of every world.
+4. `resume` size. The state is paid once per `/play` and again after a compaction. Which fields must be in the compaction dump and which can be fetched when needed? Show the byte size of each field on a realistic save.
+5. The `[game]` line fields. Which exact fields, in which order, in which language? It is injected on every player prompt, so every token counts.
+6. Minimum versions. After you check the docs, which Claude Code version do the skill, the hook, `--allowedTools`, and `omitClaudeMd` each need, and what happens on an older version (silent degrade versus a broken `/play`)? Recommend what the README and `play.sh` should say or check.
+7. Anything you find that is not in this prompt: list it and ask whether it joins the plan.
+
+REVIEW FOCUS (each line gets a test or a probe)
+- The hook with `game/dice.js` missing, and with `rolls.js` containing a syntax error: exit 0, no stack trace on stdout or stderr.
+- The hook in a session that never ran `/play`, with no database, with a database from before migration 14, and with a busy database: silent, exit 0, fast.
+- The compaction output carries the language pack, vitals, and display names, and is valid text for the Master, in both languages.
+- `resume` on a fresh install, on a tampered install (`tamper: true`, exit 0 through the front door), with a broken database, and with a collapsed hero.
+- `play.sh` with `claude` missing, with extra arguments, and with the allow flag present exactly once. The committed `.claude/settings.json` has no allow rule.
+- world-smith: a rejected `world fill` (banned phrase, duplicate name, missing slot) is retried by the agent; the written world is in the save language; the final boss gets a voice that fits a last enemy; it never writes to anything but the game through `node game/cli.js`.
+- `;` chaining: a failing log call followed by a successful action.
+- A returning player resuming a half-onboarded save (hero but no world, world setting but no fill).
+
+PROCESS
+- Read the real code and tests first. Separate confirmed facts from inference and label inference as inference. Never present a guess as evidence.
+- Write the plan to docs/superpowers/plans/ using the writing-plans skill: header, Global Constraints, Decisions (mine versus your calls), Review Focus with a test per line, tasks (fight-state split, resume enrichment, hook, play.sh and settings, skill text, world-smith, docs and README, final review), each with exact interfaces and test names, test first.
+- Add a short "Live checks for Gogi" list at the end: the things only a real `claude` session can prove (the `/play` start with `resume` inlined, the `[game]` line on a prompt, a compaction in a long session, `play.sh` on Sonnet, the world-smith run on Opus, the allow flag skipping approvals).
+- Update docs/process/deferred-findings.md with anything deferred.
+- End with the execution handoff question (subagent-driven or native) and your recommendation.
+```
