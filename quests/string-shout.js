@@ -20,6 +20,8 @@ function randomText() {
 export default {
   id: 'string-shout',
   rung: 1,
+  subject: 'strings',
+  tier: 'easy',
   complexity: 1,
 
   async check(mod) {

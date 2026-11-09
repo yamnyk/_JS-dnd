@@ -6,6 +6,8 @@ const SIDES = [4, 6, 8, 10, 12, 20, 100];
 export default {
   id: 'dice-roll',
   rung: 1,
+  subject: 'opening',
+  tier: null,
   complexity: 2,
 
   async check(mod) {
