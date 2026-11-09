@@ -16,6 +16,8 @@ import {
 // Every test that opens a game database runs the translator strictly: a missing key or placeholder
 // throws, so a leak of a raw {placeholder} fails a test. Spawned CLI processes inherit it.
 process.env.JSDND_I18N_STRICT = '1';
+// The real hook asks the remote for new commits when a session starts. Tests must never go to the network.
+process.env.JSDND_SKIP_UPDATE_CHECK = '1';
 
 export const freshDb = () => openGameDb(join(mkdtempSync(join(tmpdir(), 'jsdnd-game-')), 'game.db'));
 

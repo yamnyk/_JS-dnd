@@ -413,3 +413,9 @@ test('the ending brief names the final exam and says the boss waits for the whol
   assert.match(ending, /road/i);
   assert.match(ending, /never offer/i);
 });
+
+test('CLAUDE.md names the update check, where it lives, and the switch that turns it off', () => {
+  for (const word of ['game/update-check.js', 'JSDND_SKIP_UPDATE_CHECK', 'git pull']) {
+    assert.ok(claudeMd.includes(word), `CLAUDE.md never mentions ${word}`);
+  }
+});

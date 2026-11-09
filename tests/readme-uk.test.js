@@ -103,3 +103,8 @@ test('the Ukrainian README tells how much of the ladder is built, derived from t
     assert.doesNotMatch(intro, /Пройди кампанію, і матимеш/);
   }
 });
+
+test('the Ukrainian README tells the player that /play may ask for a git pull first', () => {
+  const uk = read('README.uk.md');
+  assert.match(uk.slice(uk.indexOf('## Як грати'), uk.indexOf('## Що потрібно')), /git pull/);
+});

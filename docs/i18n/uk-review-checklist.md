@@ -14,6 +14,7 @@ Rules to hold the text to:
 - [ ] `language.` : the language switch confirmation.
 - [ ] `check.` : what a quest check tells the player (timeouts, missing file, wrong result, passed). `{call}` and `{path}` stay as they are.
 - [ ] `style.` : the code style problems, one line per ESLint rule.
+- [ ] `update.` : the message that asks the player to run `git pull` before a session, with its plural forms for the number of new commits.
 - [ ] `move.` : the starter file comments of a combat move.
 - [ ] `hero.` : the hero line above the stamina bar (name, level, health, gold, items with plural forms, place).
 - [ ] `stamina.` : the stamina bar, the estimate marker, the collapse line with its plural forms for hours (one, few, many, other).

@@ -19,6 +19,7 @@ function install({ ready = true } = {}) {
   const env = {
     ...process.env,
     JSDND_GAME_DB: join(dir, 'game.db'),
+    JSDND_SKIP_UPDATE_CHECK: '1',
     JSDND_DICE_PATH: join(dir, 'dice.js'),
     JSDND_ROLLS_PATH: join(dir, 'rolls.js'),
     JSDND_DICE_SEAL: join(dir, 'dice.sha256'),

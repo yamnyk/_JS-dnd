@@ -114,3 +114,9 @@ test('the README tells how much of the ladder is built, and only says the campai
     assert.match(row, new RegExp(`${QUESTS.length} of ${LADDER_QUEST_COUNT}`));
   }
 });
+
+test('How to play tells the player that /play may ask for a git pull first', () => {
+  const play = readme.slice(at('\n## How to play'), at('\n## Tech stack'));
+  assert.match(play, /git pull/);
+  assert.match(play, /new commits|new version/i);
+});

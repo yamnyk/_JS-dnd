@@ -39,6 +39,13 @@ export default {
   'hero.line': '{name} Lv{level} | HP {hp}/{maxHp} | {gold} gold | {items} | {location}',
   'hero.items': { one: '{count} item', other: '{count} items' },
 
+  // Shown when a player starts a session while the game has new commits to pull.
+  'update.blocked': {
+    one: 'A new version of the game is available ({count} new commit). Close this session, run `git pull` in the game folder, then start `/play` again.',
+    other:
+      'A new version of the game is available ({count} new commits). Close this session, run `git pull` in the game folder, then start `/play` again.',
+  },
+
   'stamina.bar': 'STAMINA {bar} {left}% left | resets in {reset}',
   'stamina.barEstimated': 'STAMINA ~{bar} ~{left}% left (est.) | resets in {reset}',
   'stamina.unknown': 'STAMINA unknown',

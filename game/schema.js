@@ -291,4 +291,11 @@ CREATE TABLE play_sessions (
 );
 `,
   },
+  {
+    // When the play hook last asked the remote for new commits in this session, so it asks once per session.
+    version: 15,
+    sql: `
+ALTER TABLE play_sessions ADD COLUMN update_checked_at TEXT;
+`,
+  },
 ];
