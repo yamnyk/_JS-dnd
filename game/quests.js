@@ -267,7 +267,8 @@ export function logHint(db, saveId, questId, kind, note = null) {
   });
 }
 
-export function getProgress(db, saveId) {
+// `quests` is the registry to count against. Only tests pass another one, to stand in for a complete ladder.
+export function getProgress(db, saveId, quests = QUESTS) {
   const epoch = epochOf(db, saveId);
   const solvedIds = new Set(
     db
@@ -275,19 +276,19 @@ export function getProgress(db, saveId) {
       .all(saveId, epoch)
       .map((r) => r.quest_id),
   );
-  const solved = QUESTS.filter((q) => solvedIds.has(q.id)).map((q) => q.id);
+  const solved = quests.filter((q) => solvedIds.has(q.id)).map((q) => q.id);
   const rungs = [];
   for (let rung = 1; rung <= LADDER_RUNGS + 1; rung++) {
-    const inRung = QUESTS.filter((q) => q.rung === rung);
+    const inRung = quests.filter((q) => q.rung === rung);
     if (inRung.length)
       rungs.push({ rung, solved: inRung.filter((q) => solvedIds.has(q.id)).length, total: inRung.length });
   }
   return {
     epoch,
     solved,
-    remaining: QUESTS.filter((q) => !solvedIds.has(q.id)).map((q) => q.id),
-    open: QUESTS.filter((q) => !solvedIds.has(q.id) && isQuestOpen(q, solved)).map((q) => q.id),
+    remaining: quests.filter((q) => !solvedIds.has(q.id)).map((q) => q.id),
+    open: quests.filter((q) => !solvedIds.has(q.id) && isQuestOpen(q, solved, quests)).map((q) => q.id),
     rungs,
-    total: QUESTS.length,
+    total: quests.length,
   };
 }

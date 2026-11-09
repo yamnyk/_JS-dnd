@@ -894,16 +894,14 @@ function solveAllQuests(game) {
   }
 }
 
-function unlockEnding(game) {
+// A save from before the guard: every built quest solved and a boss win already on record.
+function oldSaveWithBossWin(game) {
   solveAllQuests(game);
   const db = game.db();
-  db.prepare("UPDATE heroes SET location_slot = 'L6' WHERE save_id = 1").run();
-  const low = () => 0.01;
-  beginFight(db, 1, { npcSlot: 'N7', tier: 'tough', aggressor: 'hero', rng: low });
-  let state;
-  do state = heroAttack(db, 1, { rng: low, sureHit: true, doubleDamage: true });
-  while (state.status === 'open');
-  return state;
+  const at = new Date(Date.now() + 5).toISOString();
+  db.prepare(
+    "INSERT INTO fights (save_id, started_at, ended_at, trigger_reason, outcome, npc_slot) VALUES (1, ?, ?, 'x', 'won', 'N7')",
+  ).run(at, at);
 }
 
 test('the final boss is refused through the CLI until every quest is solved', () => {
@@ -914,7 +912,7 @@ test('the final boss is refused through the CLI until every quest is solved', ()
   assert.match(JSON.parse(result.stderr.trim()).error, /final boss|quest/i);
 });
 
-test('ending build refuses while locked, builds the page when unlocked, and is not advertised', () => {
+test('ending build refuses while the ladder is incomplete, even for a save that already beat the boss, and is not advertised', () => {
   const game = readyGame();
   const locked = game.run('ending', 'build');
   assert.equal(locked.status, 1);
@@ -922,17 +920,28 @@ test('ending build refuses while locked, builds the page when unlocked, and is n
   assert.equal(game.run('ending', 'build', 'extra').status, 1);
   assert.equal(game.run('ending').status, 1);
 
-  assert.equal(unlockEnding(game).endingUnlocked, true);
-  const built = game.run('ending', 'build');
-  assert.equal(built.status, 0, built.stderr);
-  assert.match(readFileSync(built.json.file, 'utf8'), /Bilbo/);
-  assert.equal(game.run('ending', 'build', 'extra').status, 1);
+  oldSaveWithBossWin(game);
+  const refused = game.run('ending', 'build');
+  assert.equal(refused.status, 1);
+  assert.match(JSON.parse(refused.stderr.trim()).error, /road ahead is still being built/i);
   assert.equal(game.run('ending', 'build', '--force').status, 1);
 
   const usage = game.run();
   assert.doesNotMatch(usage.stderr, /ending/i);
   setReading(game, 99);
-  assert.equal(game.run('ending', 'build').status, 0);
+  const collapsed = game.run('ending', 'build');
+  assert.equal(collapsed.status, 1);
+  assert.equal(JSON.parse(collapsed.stderr.trim()).collapsed, undefined, 'ending build is not a play action');
+});
+
+test('the boss is refused through the CLI with the road message while the ladder is incomplete, whatever is solved', () => {
+  const game = readyGame();
+  solveAllQuests(game);
+  game.db().prepare("UPDATE heroes SET location_slot = 'L6' WHERE save_id = 1").run();
+  const result = game.run('fight', 'begin', '--npc', 'N7', '--tier', 'tough', '--aggressor', 'hero');
+  assert.equal(result.status, 1);
+  assert.match(JSON.parse(result.stderr.trim()).error, /road ahead is still being built/i);
+  assert.equal(game.run('fight', 'state').json.fight, null);
 });
 
 test('the legacy fight end cannot close a combat fight, so the boss cannot be won on paper', () => {
@@ -940,7 +949,10 @@ test('the legacy fight end cannot close a combat fight, so the boss cannot be wo
   solveAllQuests(game);
   const db = game.db();
   db.prepare("UPDATE heroes SET location_slot = 'L6' WHERE save_id = 1").run();
-  beginFight(db, 1, { npcSlot: 'N7', tier: 'tough', aggressor: 'hero', rng: () => 0.01 });
+  // The guard refuses the real boss fight while the ladder is incomplete, so write the fight as the engine would.
+  db.prepare(
+    "INSERT INTO fights (save_id, started_at, trigger_reason, npc_slot, aggressor, enemy_name, enemy_tier, enemy_hp, enemy_hp_max, enemy_ac, hero_hp, hero_hp_max) VALUES (1, ?, 'x', 'N7', 'hero', 'Boss', 'tough', 26, 26, 14, 12, 12)",
+  ).run(new Date().toISOString());
   const forged = game.run('fight', 'end', '1', 'won');
   assert.equal(forged.status, 1);
   assert.match(JSON.parse(forged.stderr.trim()).error, /fight attack|combat/i);
