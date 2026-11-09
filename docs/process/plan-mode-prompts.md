@@ -250,3 +250,71 @@ PROCESS
 - Update docs/process/deferred-findings.md with anything deferred.
 - End with the execution handoff question (subagent-driven or native) and your recommendation.
 ```
+
+## Extra plan: The curriculum is missing, so the boss opens after three quests
+
+Real players reach the final boss after three quests, having only touched strings and a little array work. This section records why, and the prompt to plan the fix. Paste the fenced block into plan mode.
+
+Why it happens (all verified by reading the code on 2026-11-09, none of it is a guess):
+
+1. **The content was never built.** `quests/index.js` registers three quests (`dice-roll`, `string-shout`, `array-sum`). Plan 3 shipped them on purpose as "3 starter quests" and said the full curriculum "is written later as content". The catalog of 17 subjects and 51 quest templates (`docs/superpowers/specs/2026-11-08-curriculum-catalog.md`) is still a draft, waiting for the owner to answer four open questions and trim it. Nothing in the process ever made building it a task with an owner or a date; it was queued behind the multi-language plan, the status bar, and the harness work.
+2. **Even with 51 quests registered, only three could be offered.** `world/skeleton.js` gives a single `questId` to N1, N2, and N3 only, and `talk` in `game/world.js` (lines 207 to 216) offers only `spot.questId`. N4 to N6 hold no quest. The handout was designed for three.
+3. **"Every quest solved" means "every quest in the registry".** `getProgress` returns `total: QUESTS.length` (`game/quests.js`), `endingStatus` unlocks when `questsSolved === progress.total` (`game/ending.js`), and the boss gate in `fight begin` checks `remaining.length`. So with three quests, "the whole campaign" is three quests. Nothing ties the ending to the curriculum, the six rungs in spec section 5.3, or the promise in the README.
+4. **The boss is only a fight.** N7 is always tier `tough` (26 HP, AC 14). Beating it needs no JavaScript at all, so even a full curriculum would end in a dice fight that tests none of it.
+5. **The promise and the product disagree.** The README opens with "solid JS fundamentals up to async" and says "only three starter quests exist" far down in the Status section. The Master's `ending.md` tells it to build dread and offer the boss as soon as the scripts allow.
+
+```
+Read docs/superpowers/specs/2026-11-08-curriculum-catalog.md in full, then docs/superpowers/specs/2026-11-07-js-dnd-campaign-design.md (sections 5.2, 5.3, 5.5, 5.10), docs/superpowers/plans/2026-11-07-quest-engine.md, CLAUDE.md, and the multi-language and hero status bar plans in docs/superpowers/plans/. Read the real code before you trust any of this prompt: quests/index.js, quests/*.js, quests/text/, world/skeleton.js, game/world.js (talk), game/quests.js (getProgress, requireQuestAccess, judgeQuest, revokeSolve), game/ending.js, game/combat-engine.js (beginFight and the boss gate), game/ending-stats.js, the skill files in .claude/skills/play/ (or .claude/commands/play.md if the skill is not merged yet), and tests/quests/. Run `node dev/cli.js status` first.
+
+GOAL
+Make the campaign real. A player must meet the whole ladder (values to async, the event loop, and fetch) before the final boss, the boss must mean something, and nobody must be able to reach the ending while the curriculum is unfinished. Fix the cause, not the symptom: the five causes are listed above, check each one against the code yourself and say which are still true.
+
+THE FIVE CAUSES (verify each, label it "verified by running" or "inference")
+1. Only three quests exist. 2. The skeleton and `talk` can hand out only three. 3. "All quests solved" is relative to the registry size. 4. The boss is a plain fight with no JS in it. 5. The README and the Master brief promise more than the game has.
+
+DECISIONS ALREADY MADE (do not re-ask; they are in the catalog)
+- 17 subjects, 3 quest templates each (easy, medium, hard), 51 in total, built in one run. Callbacks only as preparation for array and string methods. Array methods and string methods are their own subjects. Error handling is its own subject. fetch and JSON are one subject. Browser topics are out, with Playwright-style tests as a later item.
+- Quests are setting-neutral: a template holds only the technical spec, the expected results, and code style directions. The Master dresses it in the world's skin.
+- The universal quest template: `id`, `title`, `rung`, `complexity`, `subject`, `tier`, `spec`, `expected` (2 to 4 examples), `style.specific`, `stub`, `check(mod)`. Plus one general style list shown with every quest.
+- Check rules: generated inputs on every run so hardcoded answers fail; no network (fetch is a parameter with `fetch` as the default, and the check passes a fake); timer quests use `node:test` mock timers inside the child process; a check reports the first failing case plainly.
+- Every quest has English and Ukrainian text in the catalogs (`quests/text/en.js` and `uk.js`), and every Ukrainian string goes on `docs/i18n/uk-review-checklist.md`. Master-facing text stays English.
+
+CONSTRAINTS
+- Commit and push yourself with plain messages. NEVER a `Co-Authored-By` line, a "Generated with Claude" line, or any Claude attribution. Never force-push or rewrite pushed history without asking. Ask before other outward-facing actions.
+- No em-dash and no en-dash anywhere.
+- `game/dice.js` and `game/rolls.js` are sealed in `game/dice.sha256`: never edit or format them. Tamper must stay exit 2 through the front door.
+- Game state only in SQLite through scripts. Migrations are append-only. Machine-readable surfaces stay stable unless I approve a change (CLI command names, JSON keys, DB columns, honor kinds, existing quest ids).
+- Deterministic work in scripts, judgment work (quest wording, reference solutions, Ukrainian text) by agents, with a script that proves every quest: a reference solution passes, a wrong one fails, a hardcoded one fails (the pattern in tests/quests/solutions/ and the starter quest tests). A quest without those three proofs does not count as built.
+- Tests first for every change, mutation-check the important ones, the whole suite plus `npm run lint` and `npm run format:check` and the dash scan after every task.
+- Player-facing text goes through the catalogs; the ESLint player-facing guard in eslint.config.js must stay green.
+- Existing saves must keep working: a player with three solved quests and a won boss must land somewhere sensible, and a quest added after the ending was unlocked must reopen the road (that rule already exists in `endingStatus`; keep it).
+
+ASK ME BEFORE ASSUMING: USE AskUserQuestion, ONE DECISION AT A TIME OR SMALL RELATED GROUPS, WITH YOUR RECOMMENDATION FIRST. DO NOT WRITE THE PLAN UNTIL THESE ARE ANSWERED:
+1. The interim guard. Until the whole ladder exists, what do players get when they finish the quests that do exist? Options: the boss and the ending stay locked until every rung has its quests (a constant in code that the tests pin), with the Master telling the player the road ahead is still being built; or a per-rung release where the boss gate counts only the rungs that are built; or nothing. Recommend one, and say what each costs, including what a player who has already won the boss sees.
+2. The four open questions in the catalog, one by one: where `dice-roll` sits (the spec wants it early), the general style list, which hard quests to cut, and the handout. Show me what each choice changes.
+3. The handout, because causes 2 and 5 depend on it. With 51 quests and 7 NPCs, how are quests offered? Options: each of N1 to N6 owns a rung and `talk` offers the next unsolved quest of that rung; any NPC offers the next quest and the Master picks who speaks; or the Master asks for a quest from a quest board script. I dislike a fixed quest per NPC, so show me the least static option that is still cheap and testable, and what it does to the skeleton file, `talk`, and the Master brief.
+4. Quest order. Today a quest opens only when every earlier quest in the registry is solved, in strict order. With 51 quests, one stuck beginner blocks everything. Options: keep strict global order, open the next rung only when the current rung is done and let the player pick any quest inside a rung, or open a rung when most of the previous one is done. Recommend one, and say what it does to `requireQuestAccess`, `quest list`, the ending, and the stats page.
+5. What the boss is. Options: keep the plain tough fight but only after all rungs; require an exam inside the fight, one or more advanced moves (the move-smith path) at difficulty 5 drawn from subjects the player solved, so the boss can only be beaten by writing JS; or a multi-phase boss with one move per rung. Recommend one, and say what it costs in tokens and in implementation, and how a fresh player with no hints would experience it.
+6. Existing saves. Players already have three solved quests and some have beaten the boss. Options: leave them, and the boss must be beaten again once new quests are solved; or mark old wins as old. Say what `endingStatus` does today for each.
+7. Build order and review gates. A release per rung (6 releases) or one big release. Which agents write quests, how many quests per batch, a fresh reviewer per rung, and when I review the Ukrainian drafts. Give me a realistic size of the work: files, tests, and the number of reference, wrong, and hardcoded solution files.
+8. The token cost for the Master. `quest list` returns every quest, and the skill text grows with the ladder. Show me the size of `quest list` at 51 quests and propose what the Master should be shown instead.
+9. Anything you find while verifying that is not in this prompt: list it and ask whether it joins the plan.
+
+REVIEW FOCUS (each line gets a test or a probe)
+- Registry invariants for all 51: unique ids, rung order, every quest reachable through the handout, none unreachable, none offered twice, every id has English and Ukrainian text and a stub, the title and brief placeholders match across languages.
+- A fresh game played quest by quest through the whole ladder with the reference solutions, in both languages, reaching the boss only after the last rung.
+- A game where the player gets stuck, reverts a solve (`quest revoke`), changes language, and meets a tamper reset in the middle of a rung.
+- The ending gate and the stats page with 51 quests: complexity chart scale, time estimates, "subjects learned" (now buildable), the page size.
+- Timer, promise, fetch, and event loop checks: deterministic, fast, no real network, no flake over 100 runs, a never-settling promise gives a named error.
+- The boss: cannot be reached early by any route (`fight begin`, `talk`, a quest fight), cannot be won without the JS part if you choose the exam, and still works with tiredness penalties and a collapse in the middle.
+- Existing saves with three solved quests, with a won boss, and with an unlocked ending page.
+- The Master brief size, `quest list` size, and `resume` size with 51 quests.
+- README, README.uk.md, and the Master brief tell the truth about how far the ladder goes at every step of the build.
+
+PROCESS
+- Separate confirmed facts from inference and label inference as inference. Never present a guess as evidence.
+- Write the plan to docs/superpowers/plans/ using the writing-plans skill: header, Global Constraints, Decisions (mine versus your calls), Review Focus with a test per line, tasks. Put the structural work first (interim guard, handout, order, boss), then the content in rung-sized batches, each batch ending with its proofs, a fresh review, and a Ukrainian review checklist update. Each task with exact interfaces and test names, test first.
+- Update docs/process/deferred-findings.md and the dev notes in the plan's last task.
+- Add a short "Live checks for Gogi" list: a real playthrough of one rung in each language, the boss fight, and a mid-game language switch.
+- End with the execution handoff question (subagent-driven or native) and your recommendation.
+```
