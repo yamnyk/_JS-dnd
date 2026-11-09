@@ -125,7 +125,7 @@ export function toNumberOrNull(input) {
     'strings-count-label': {
       title: 'Count with a label',
       brief:
-        "Write a function countLabel(count, noun). It returns the count and the noun joined by a space. When the count is exactly 1, the noun stays as it is. For any other count, including 0, add an 's' to the noun.",
+        "Write a function countLabel(count, noun). It returns the count and the noun joined by a space. When the count is exactly 1, the noun stays as it is. For any other count, including 0, add an 's' to the noun, even to words that end in s, x, or y.",
       stub: `// Quest: count with a label.
 // Export countLabel(count, noun): return the count and the noun joined by a space.
 // A count of 1 keeps the noun as it is. Any other count, including 0, adds an "s".
@@ -143,7 +143,7 @@ export function countLabel(count, noun) {
     'strings-middle': {
       title: 'Find the middle',
       brief:
-        "Write a function middle(text). It returns the middle character of the text. When the length is even, it returns the middle two characters. An empty text gives ''.",
+        "Write a function middle(text). It returns the middle character of the text. When the length is even, it returns the middle two characters. An empty text gives ''. Spaces are characters like any other, so do not trim the text.",
       stub: `// Quest: find the middle.
 // Export middle(text): return the middle character, or the middle two when the length is even.
 // An empty text gives an empty string.

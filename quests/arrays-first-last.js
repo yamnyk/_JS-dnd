@@ -1,12 +1,11 @@
 import { isDeepStrictEqual } from 'node:util';
-import { missingExport, wrongResult, passed } from './messages.js';
+import { missingExport, wrongResult, passed, show } from './messages.js';
 
 const FIXED = [[1, 2, 3], [7], [], [4, 5], [-3, 0, 8, 2]];
 
 const reference = (items) => (items.length === 0 ? [] : [items[0], items[items.length - 1]]);
 const pick = (n) => Math.floor(Math.random() * n);
 const randomItems = () => Array.from({ length: pick(9) }, () => pick(41) - 20);
-const show = (value) => JSON.stringify(value) ?? String(value);
 
 // The title, brief, and starter file for this quest are in quests/text.
 export default {

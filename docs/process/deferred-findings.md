@@ -139,3 +139,15 @@ Legend for status: **open** means still true in the code, **fixed** means a late
   - Test gaps: "revoking a solve that gave no item" actually solves through `judgeQuest`, and the tamper reset with `fullHeal` is not run end to end under a missing dice file (checked by hand, works).
 - Gogi's call: gold and items survive a tamper reset, so re-solving in the new epoch pays again.
 - Not judged: an unparseable `hp_updated_at` makes `syncHp` throw (hand-edited DB only), up to 29 leftover regeneration minutes are lost per fight by design, `hero show` reads the hero and vitals in separate statements.
+
+## Found by the review of rung 1 of the curriculum, 2026-11-09
+
+- Fixed: `strings-count-label` passed an `es`/`ies` solution on about 70 percent of runs, because only random nouns ended in s, x, or y. Fixed cases added and the brief now says so.
+- Fixed: `strings-middle` passed a solution that trims its text on about 60 percent of runs. Fixed cases with spaces at the ends added and the brief says spaces count.
+- Fixed: the failure messages of four quests turned undefined and NaN into `null`. One shared `show` helper in `quests/messages.js` prints them as themselves.
+- Deferred minors:
+  - No check wraps the player's call in try/catch, so a crash in a plausible beginner bug (`counts.hasOwnProperty(w)`, a merge without a null guard) is reported as a raw error without the input that caused it. Same pattern as `string-shout` from the start.
+  - `countLabel` is not tested with negative or decimal counts; by the brief `-1` gives `'-1 apples'`.
+  - `arrays-first-last` never checks that a new array is returned for `[]` (`return items` passes), although the brief says new array.
+  - `tests/game/navigation.test.js` and `tests/game/cli.test.js` assume every registered quest is on rung 1 (`QUESTS.slice(1)`); they will fail loudly when rung 2 is registered and must be rewritten then.
+  - The Ukrainian drafts still need the owner's review (checklist rows added).
