@@ -185,9 +185,9 @@ export function go(db, saveId, target) {
   return { location: { slot: destination.slot, name: destination.name } };
 }
 
-// A quest holder offers their quest only when every earlier quest is solved in the current
-// epoch and this one is not solved yet.
-export function talk(db, saveId, npcSlot) {
+// A quest giver offers the open, unsolved quests of their rung (see world/skeleton.js). `quests` is the registry;
+// only tests pass another one, to stand in for a complete ladder.
+export function talk(db, saveId, npcSlot, { quests = QUESTS } = {}) {
   const hero = requireReady(db, saveId);
   const spot = SKELETON.npcs.find(
     (n) =>
@@ -203,16 +203,14 @@ export function talk(db, saveId, npcSlot) {
     .prepare('SELECT slot, name, description, voice FROM world_npcs WHERE save_id = ? AND slot = ?')
     .get(saveId, spot.slot);
 
-  let offer = null;
-  if (spot.questId) {
-    const { solved } = getProgress(db, saveId);
-    const index = QUESTS.findIndex((q) => q.id === spot.questId);
-    const earlierSolved = QUESTS.slice(0, index).every((q) => solved.includes(q.id));
-    if (earlierSolved && !solved.includes(spot.questId)) {
-      const quest = QUESTS[index];
-      const text = questText(quest.id, effectiveLanguage(db, saveId));
-      offer = { questId: quest.id, title: text.title, brief: text.brief };
-    }
-  }
-  return { npc: { slot: npc.slot, name: npc.name, description: npc.description, voice: npc.voice }, offer };
+  // The NPC offers the quests of their rung that are open and not solved yet: the first in play order as
+  // `offer`, the others as `open`, so the Master can offer a choice.
+  const lang = effectiveLanguage(db, saveId);
+  const { open: openIds } = getProgress(db, saveId, quests);
+  const here = quests.filter((q) => q.rung === spot.rung && openIds.includes(q.id));
+  const textOf = (quest) => questText(quest.id, lang) ?? { title: quest.id, brief: '' };
+  const offerOf = (quest) => ({ questId: quest.id, title: textOf(quest).title });
+  const offer = here.length ? { ...offerOf(here[0]), brief: textOf(here[0]).brief } : null;
+  const open = here.slice(1).map((quest) => ({ ...offerOf(quest), tier: quest.tier }));
+  return { npc: { slot: npc.slot, name: npc.name, description: npc.description, voice: npc.voice }, offer, open };
 }
