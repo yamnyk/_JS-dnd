@@ -108,9 +108,10 @@ test('the real registry is not a complete ladder yet, and says what is missing',
   assert.equal(status.complete, false);
   assert.equal(status.capstone, false);
   const missing = status.missing.map((m) => `${m.subject}/${m.tier}`);
-  assert.ok(missing.includes('values/easy'));
+  assert.ok(missing.includes('conditionals/easy'), 'rung 2 is not built yet');
   assert.ok(!missing.includes('strings/easy'), 'string-shout fills strings/easy');
   assert.ok(!missing.includes('arrays/medium'), 'array-sum fills arrays/medium');
+  assert.ok(!missing.includes('values/easy'), 'rung 1 is built');
   assert.equal(status.opening, true);
 });
 

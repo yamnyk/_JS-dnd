@@ -6,7 +6,7 @@ A D&D-style adventure you play in your terminal, with your own AI model as the D
 
 Built for JS beginners who want to learn programming but are tired of gamified quizzes. When the campaign is finished you will have solid JS fundamentals up to async: the event loop, timeouts, and fetch.
 
-**The campaign is still being built: 3 of 53 quests exist so far.** The final boss and the ending stay locked until the whole ladder is there, so for now the game ends honestly with "the road ahead is still being built". Watch the repo for new rungs.
+**The campaign is still being built: 13 of 53 quests exist so far, which is all of rung 1 of 6.** The final boss and the ending stay locked until the whole ladder is there, so for now the game ends honestly with "the road ahead is still being built". Watch the repo for new rungs.
 
 ## How to play
 
@@ -80,7 +80,7 @@ Legend: **Done** is built and tested. **In progress** is partly built. **Planned
 | Step 2 judging (read the code for cheating)   | 3     | Done    | The Master reports clean or cheated and `quest judge` records it. The only judging that costs tokens.                                                                                                              |
 | Honor and reputation                          | 3     | Done    | Red Dead Redemption 2 style, logged as timestamped events. Default deltas live in one table (`game/honor-rules.js`).                                                                                       |
 | Gentle review or roasting by honor level      | 3     | Done    | Starts only after step 1 passes. Roasting below honor 0, gentle at 0 and above.                                                                                                                 |
-| Curriculum from strings to async              | 3     | In progress | 3 of 53 quests are built, all on rung 1. The rest is being written rung by rung, and the boss and ending stay locked until it is done.                                                                                                                     |
+| Curriculum from strings to async              | 3     | In progress | 13 of 53 quests are built: rung 1 of 6 is complete. The rest is being written rung by rung, and the boss and ending stay locked until it is done.                                                                                                                     |
 | Hero creation with race, class, and point buy | 4     | Done    | 5e point buy (27 points) plus race bonuses, checked against public 5e sources. Custom race or class allowed with a description.                                                                                                     |
 | Setting choice and world generation           | 4     | Done    | A fixed skeleton of 6 locations and 7 NPCs (one is the final boss) lives in the repo. The Master only fills in names, descriptions, and voices.                                                                                                          |
 | Master voice per setting                      | 4     | In progress | A banned AI-speak list is enforced when the Master saves the world. Whether the writing actually sounds right can only be judged by playing.                                                                                           |

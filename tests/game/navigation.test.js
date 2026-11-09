@@ -12,6 +12,7 @@ import { setLanguage } from '../../game/i18n.js';
 import { questText } from '../../quests/text/index.js';
 import { beginFight, heroAttack } from '../../game/combat-engine.js';
 import { freshDb, markSolved, standInLadder } from './helpers.js';
+import { QUESTS } from '../../quests/index.js';
 import { SETTING, goodWorld } from './world-fixtures.js';
 
 const solutions = join(resolve(dirname(fileURLToPath(import.meta.url))), '..', 'quests', 'solutions');
@@ -106,10 +107,7 @@ test('N1 offers the first open quest of rung 1 and lists the other open ones', (
   assert.equal(result.offer.questId, 'dice-roll');
   assert.deepEqual(
     result.open.map((q) => [q.questId, q.tier]),
-    [
-      ['string-shout', 'easy'],
-      ['array-sum', 'medium'],
-    ],
+    QUESTS.slice(1).map((q) => [q.id, q.tier]),
   );
   assert.ok(result.open.every((q) => q.title));
 });
@@ -118,13 +116,12 @@ test('a solved quest is no longer offered, the next open one is, and nothing is 
   const { db, saveId, solve } = ready();
   solve('dice-roll');
   const second = talk(db, saveId, 'N1');
-  assert.equal(second.offer.questId, 'string-shout');
+  assert.equal(second.offer.questId, QUESTS[1].id);
   assert.deepEqual(
     second.open.map((q) => q.questId),
-    ['array-sum'],
+    QUESTS.slice(2).map((q) => q.id),
   );
-  solve('string-shout');
-  solve('array-sum');
+  for (const quest of QUESTS.slice(1)) markSolved(db, saveId, quest.id);
   const done = talk(db, saveId, 'N1');
   assert.equal(done.offer, null);
   assert.deepEqual(done.open, []);

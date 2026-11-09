@@ -223,18 +223,14 @@ test('parallel commands do not fail with a locked database', async () => {
 
 const solutionFile = (id, kind = 'reference') => join(root, 'tests', 'quests', 'solutions', `${id}.${kind}.js`);
 
-test('quest list shows the three quests unsolved with complexity', () => {
+test('quest list shows every quest of the open rung unsolved with complexity', () => {
   const { run } = install();
   run('init');
   const result = run('quest', 'list');
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(
     result.json.quests.map((q) => [q.id, q.solved]),
-    [
-      ['dice-roll', false],
-      ['string-shout', false],
-      ['array-sum', false],
-    ],
+    QUESTS.map((q) => [q.id, false]),
   );
   assert.ok(result.json.quests.every((q) => q.complexity >= 1));
 });
@@ -1033,7 +1029,10 @@ test('quest start, check, and list print the real file path under the player fol
   copyFileSync(solutionFile('dice-roll'), where('dice-roll'));
   assert.equal(game.run('quest', 'check', 'dice-roll').json.file, where('dice-roll'));
   const files = game.run('quest', 'list').json.quests.map((q) => q.file);
-  assert.deepEqual(files, ['dice-roll', 'string-shout', 'array-sum'].map(where));
+  assert.deepEqual(
+    files,
+    QUESTS.map((q) => where(q.id)),
+  );
 });
 
 test('editing rolls.js exits 2 like editing the dice, and the message names both files', () => {
@@ -1360,28 +1359,20 @@ test('quest list shows the open unsolved quests with subject and tier, and quest
   const fresh = game.run('quest', 'list').json;
   assert.deepEqual(
     fresh.quests.map((q) => [q.id, q.subject, q.tier]),
-    [
-      ['dice-roll', 'opening', null],
-      ['string-shout', 'strings', 'easy'],
-      ['array-sum', 'arrays', 'medium'],
-    ],
+    QUESTS.map((q) => [q.id, q.subject, q.tier]),
   );
-  assert.deepEqual(fresh.progress, { solved: 0, total: 3 });
+  assert.deepEqual(fresh.progress, { solved: 0, total: QUESTS.length });
   markSolved(game.db(), 1, 'dice-roll');
   const after = game.run('quest', 'list').json;
   assert.deepEqual(
     after.quests.map((q) => q.id),
-    ['string-shout', 'array-sum'],
+    QUESTS.map((q) => q.id).filter((id) => id !== 'dice-roll'),
   );
-  assert.deepEqual(after.progress, { solved: 1, total: 3 });
+  assert.deepEqual(after.progress, { solved: 1, total: QUESTS.length });
   const all = game.run('quest', 'list', 'all').json;
   assert.deepEqual(
     all.quests.map((q) => [q.id, q.solved]),
-    [
-      ['dice-roll', true],
-      ['string-shout', false],
-      ['array-sum', false],
-    ],
+    QUESTS.map((q) => [q.id, q.id === 'dice-roll']),
   );
   assert.equal(game.run('quest', 'list', 'everything').status, 1);
 });

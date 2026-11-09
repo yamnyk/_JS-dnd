@@ -96,7 +96,10 @@ test('stats after a real run: solves, a win, a fall, and the honor and complexit
   let stats = collectStats(db, saveId);
   assert.deepEqual([stats.hero.name, stats.hero.race, stats.setting.name], ['Bilbo', 'halfling', 'Neon Harbor']);
   assert.deepEqual([stats.enemiesDefeated, stats.fights, stats.falls], [1, 1, 0]);
-  assert.deepEqual([stats.tasks.solved, stats.tasks.total, stats.tasks.list.length], [3, 3, 3]);
+  assert.deepEqual(
+    [stats.tasks.solved, stats.tasks.total, stats.tasks.list.length],
+    [QUESTS.length, QUESTS.length, QUESTS.length],
+  );
   assert.deepEqual(
     stats.tasks.list.map((t) => t.id),
     QUESTS.map((q) => q.id),
@@ -115,7 +118,10 @@ test('stats after a real run: solves, a win, a fall, and the honor and complexit
 
   applyTamperReset(db, saveId, { expected: 'a', found: 'b' });
   stats = collectStats(db, saveId);
-  assert.deepEqual([stats.falls, stats.tasks.solved, stats.tasks.list.length, stats.enemiesDefeated], [1, 0, 3, 1]);
+  assert.deepEqual(
+    [stats.falls, stats.tasks.solved, stats.tasks.list.length, stats.enemiesDefeated],
+    [1, 0, QUESTS.length, 1],
+  );
   assert.deepEqual(stats.honor.at(-1).honor, -100);
   assert.equal(stats.honor.at(-1).kind, 'reset');
 });

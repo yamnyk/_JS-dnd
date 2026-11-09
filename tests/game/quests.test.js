@@ -192,10 +192,10 @@ test('getProgress lists solved, remaining, and open in registry order, with a su
   assert.deepEqual(getProgress(db, saveId), {
     epoch: 0,
     solved: ['dice-roll'],
-    remaining: ['string-shout', 'array-sum'],
-    open: ['string-shout', 'array-sum'],
-    rungs: [{ rung: 1, solved: 1, total: 3 }],
-    total: 3,
+    remaining: QUESTS.map((q) => q.id).filter((id) => id !== 'dice-roll'),
+    open: QUESTS.map((q) => q.id).filter((id) => id !== 'dice-roll'),
+    rungs: [{ rung: 1, solved: 1, total: QUESTS.length }],
+    total: QUESTS.length,
   });
 });
 
@@ -296,7 +296,7 @@ test('the quests of rung 1 are open from the start, in any order', () => {
   assert.equal(checkQuest(db, saveId, 'array-sum', opts).status, 'pass');
   put('string-shout');
   assert.equal(checkQuest(db, saveId, 'string-shout', opts).status, 'pass');
-  assert.equal(getProgress(db, saveId).open.length, 3);
+  assert.equal(getProgress(db, saveId).open.length, QUESTS.length);
 });
 
 test('after a tamper reset the solves of the old epoch no longer count and every quest is open and unsolved again', () => {
@@ -307,7 +307,10 @@ test('after a tamper reset the solves of the old epoch no longer count and every
   applyTamperReset(db, saveId, { expected: 'a', found: 'b' });
   const progress = getProgress(db, saveId);
   assert.deepEqual(progress.solved, []);
-  assert.deepEqual(progress.open, ['dice-roll', 'string-shout', 'array-sum']);
+  assert.deepEqual(
+    progress.open,
+    QUESTS.map((q) => q.id),
+  );
 });
 
 test('startQuest without a database still writes the stub, for tools that have no save', () => {

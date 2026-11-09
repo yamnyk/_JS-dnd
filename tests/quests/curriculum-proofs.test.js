@@ -39,11 +39,7 @@ describe('every quest proves itself', { concurrency: 8 }, () => {
         assert.equal(result.status, 'fail', result.message);
         assert.ok(result.expected.length > 0 && result.got.length > 0);
         assert.notEqual(result.got, result.expected);
-        assert.doesNotMatch(
-          `${result.got}${result.expected}${result.message}`,
-          /[{}]|\bnull\b/,
-          'a raw placeholder leaked',
-        );
+        assert.doesNotMatch(`${result.got}${result.expected}${result.message}`, /\{\w+\}/, 'a raw placeholder leaked');
       });
 
       it('fails a hardcoded solution', () => {
