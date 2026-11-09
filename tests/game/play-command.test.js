@@ -234,9 +234,9 @@ test('play.md hands over the style directions and runs the warn, fix, or decline
   assert.match(quests, /a little honor/i);
 });
 
-test('play.md says quests open in order and where the file path comes from', () => {
+test('play.md says quests open rung by rung and where the file path comes from', () => {
   const quests = play.slice(play.indexOf('## Quests'), play.indexOf('## Combat'));
-  assert.match(quests, /open in order/i);
+  assert.match(quests, /open rung by rung/i);
   assert.match(quests, /not open yet/i);
   assert.match(quests, /`file`/);
 });
@@ -387,4 +387,29 @@ test('a world-smith that gives up leaves the Master writing the world itself, ne
   const notComplete = step.search(/not complete/i);
   const fallback = step.indexOf('node game/cli.js world skeleton');
   assert.ok(notComplete >= 0 && fallback > notComplete, 'the fallback must follow the not-complete check');
+});
+
+test('the brief explains how quests open, what talk returns, and what to say when the road ends', () => {
+  assert.match(skill, /rung by rung/i);
+  assert.match(skill, /any open quest/i);
+  assert.match(skill, /easy and medium/i);
+  assert.match(skill, /`open` list/);
+  assert.match(skill, /up to 4/i);
+  assert.match(skill, /road ahead is still being built/i);
+  assert.match(skill, /never invent a quest/i);
+  assert.match(skill, /`quest list all`/);
+});
+
+test('the [game] line is described with health, gold, and the quest part, and the quest part is explained', () => {
+  assert.match(skill, /health, gold/i);
+  assert.match(skill, /rung \d|rung N|`rung /i);
+  assert.match(skill, /road ahead still being built/);
+});
+
+test('the ending brief names the final exam and says the boss waits for the whole road', () => {
+  const ending = part('ending.md');
+  assert.match(ending, /final exam/i);
+  assert.match(ending, /N7/);
+  assert.match(ending, /road/i);
+  assert.match(ending, /never offer/i);
 });

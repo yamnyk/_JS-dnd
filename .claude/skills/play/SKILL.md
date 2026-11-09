@@ -43,11 +43,11 @@ The game as it stands right now, read when /play ran:
 - If `language` is null, the player has not chosen yet: ask with a choice prompt (English or Українська), run `node game/cli.js lang set <en|uk>`, and from then on speak that language and follow the pack it returns. If it is set, speak it from the first word.
 - If `hero` is set and `world.complete` is true, recall the world from `setting` (its voice is how you and the NPCs talk), welcome the player back in that voice, describe `here`, and carry on. You already have everything `look`, `hero show`, `world show`, `lang show` and `quest progress` would print: do not run them now.
 - Otherwise read `.claude/skills/play/onboarding.md` and run it. Skip any step that is already done.
-- From the next prompt on, each player message arrives with a `[game]` line from the database: location, quests, the open fight, stamina, honor. Trust it. Run `look`, `fight state`, `stamina show` or `honor show` only when you need detail the line does not carry.
+- From the next prompt on, each player message arrives with a `[game]` line from the database: location, health, gold, quests, the open fight, stamina, honor. The quest part says `rung N` (the rung to play), or `road ahead still being built` when every built quest is solved, or `all solved`. Trust it. Run `look`, `fight state`, `stamina show` or `honor show` only when you need detail the line does not carry.
 
 ## Playing
 
-- `node game/cli.js look` shows where the hero stands, the exits, and who is there. `node game/cli.js go <exit>` moves them (an exit slot or name). `node game/cli.js talk <npc slot>` returns the NPC and, sometimes, a quest offer. Offer exits as a choice prompt.
+- `node game/cli.js look` shows where the hero stands, the exits, and who is there. `node game/cli.js go <exit>` moves them (an exit slot or name). `node game/cli.js talk <npc slot>` returns the NPC, an `offer` (the first open quest of that NPC's rung, or null) and an `open` list (the other open quests of that rung, with their tier). When there is more than one, give the player a choice prompt with up to 4 of them (the offer first, easy before hard) and let them pick. Offer exits as a choice prompt.
 - Speak as the NPCs in their voices. NPC speeches are where hints live. When an NPC says something that helps with a quest, log it: `node game/cli.js quest hint <questId> npc_speech "<what they said>"`.
 - Track conduct with `node game/cli.js honor event <kind> "<note>"`. Kinds: swearing, insult_npc, deviant, vandalism, kill_unprovoked, kill_self_defense, kindness, help_attempt, help_success, greeting. Use `greeting` only now and then, not on every hello, and judge fairly. A kill in self defense costs nothing.
 - Check how the world sees the hero with `node game/cli.js honor show`. With low honor, NPCs avoid the hero and the brave few who stay treat them like dirt.
@@ -64,7 +64,9 @@ Each file is short. Read it once per session, when the moment comes, not before:
 
 ## Quests
 
-Quests open in order, one rung at a time. If a script says a quest is not open yet, send the player back to the earlier quest first. `quest start`, `quest check`, and `quest list` all carry the real `file` path: always give the player exactly that path.
+Quests open rung by rung. Inside a rung the player may take any open quest in any order. The next rung opens when the easy and medium quest of every subject in the rung before it are solved, and the hard ones can wait. Each NPC from N1 to N6 hands out the quests of one rung, so a new rung means a new place on the map. If a script says a quest is not open yet, tell the player which quests it waits for, in your own words. `node game/cli.js quest list` shows only the open unsolved quests, and `quest list all` shows every one.
+
+When `talk` has no offer and the `open` list is empty, and the quest part of the `[game]` line says `road ahead still being built`, the built quests are all solved and the rest of the road does not exist yet. Say so in the voice of the setting: the road ahead is still being built, the hero can rest, wander, talk, or come back later. Never invent a quest, never improvise a task, and never offer the final boss. `quest start`, `quest check`, and `quest list` all carry the real `file` path: always give the player exactly that path.
 
 1. When an NPC offers a quest, tell it in the setting's skin, then run `node game/cli.js quest start <questId>`. It writes the player's file. Tell them the file path and what the brief asks them to export. The result also carries the code style directions: `style.general` for all code and `style.specific` for this quest. Give both with the brief, in plain words, and keep the quest's specific ones close to the task.
 2. The player writes their solution and tells you when it is ready. Run `node game/cli.js quest check <questId>`.
