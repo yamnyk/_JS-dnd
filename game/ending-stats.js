@@ -44,9 +44,9 @@ function allTimestamps(db, saveId) {
 }
 
 // Plain data for the ending page. Nothing here is formatted for display.
-export function collectStats(db, saveId) {
+export function collectStats(db, saveId, { quests = QUESTS } = {}) {
   const hero = getHero(db, saveId);
-  const progress = getProgress(db, saveId);
+  const progress = getProgress(db, saveId, quests);
   const minutes = Math.round(activeSeconds(allTimestamps(db, saveId)) / 60);
 
   const solves = db
@@ -72,7 +72,7 @@ export function collectStats(db, saveId) {
       solved: progress.solved.length,
       total: progress.total,
       list: solves.map((s) => {
-        const quest = QUESTS.find((q) => q.id === s.quest_id);
+        const quest = quests.find((q) => q.id === s.quest_id);
         return {
           id: s.quest_id,
           title: questText(s.quest_id, effectiveLanguage(db, saveId))?.title ?? s.quest_id,

@@ -11,7 +11,8 @@ import { applyTamperReset } from '../../game/reset.js';
 import { setLanguage } from '../../game/i18n.js';
 import { questText } from '../../quests/text/index.js';
 import { beginFight, heroAttack } from '../../game/combat-engine.js';
-import { freshDb } from './helpers.js';
+import { freshDb, markSolved, standInLadder } from './helpers.js';
+import { QUESTS } from '../../quests/index.js';
 import { SETTING, goodWorld } from './world-fixtures.js';
 
 const solutions = join(resolve(dirname(fileURLToPath(import.meta.url))), '..', 'quests', 'solutions');
@@ -100,20 +101,40 @@ test('the first quest is offered by N1 at the start', () => {
   assert.ok(result.offer.title && result.offer.brief);
 });
 
-test('the second quest is not offered until the first is solved, then it is', () => {
+test('N1 offers the first open quest of rung 1 and lists the other open ones', () => {
+  const { db, saveId } = ready();
+  const result = talk(db, saveId, 'N1');
+  assert.equal(result.offer.questId, 'dice-roll');
+  assert.deepEqual(
+    result.open.map((q) => [q.questId, q.tier]),
+    QUESTS.slice(1).map((q) => [q.id, q.tier]),
+  );
+  assert.ok(result.open.every((q) => q.title));
+});
+
+test('a solved quest is no longer offered, the next open one is, and nothing is left when all are solved', () => {
+  const { db, saveId, solve } = ready();
+  solve('dice-roll');
+  const second = talk(db, saveId, 'N1');
+  assert.equal(second.offer.questId, QUESTS[1].id);
+  assert.deepEqual(
+    second.open.map((q) => q.questId),
+    QUESTS.slice(2).map((q) => q.id),
+  );
+  for (const quest of QUESTS.slice(1)) markSolved(db, saveId, quest.id);
+  const done = talk(db, saveId, 'N1');
+  assert.equal(done.offer, null);
+  assert.deepEqual(done.open, []);
+});
+
+test('N2 has nothing to offer while no rung 2 quest is built, and it does not borrow rung 1 quests', () => {
   const { db, saveId, solve } = ready();
   go(db, saveId, 'L2');
-  assert.equal(talk(db, saveId, 'N2').offer, null);
+  assert.deepEqual([talk(db, saveId, 'N2').offer, talk(db, saveId, 'N2').open], [null, []]);
   go(db, saveId, 'L1');
   solve('dice-roll');
   go(db, saveId, 'L2');
-  assert.equal(talk(db, saveId, 'N2').offer.questId, 'string-shout');
-});
-
-test('a solved quest is no longer offered', () => {
-  const { db, saveId, solve } = ready();
-  solve('dice-roll');
-  assert.equal(talk(db, saveId, 'N1').offer, null);
+  assert.equal(talk(db, saveId, 'N2').offer, null);
 });
 
 test('after a tamper reset gating starts over', () => {
@@ -123,6 +144,33 @@ test('after a tamper reset gating starts over', () => {
   assert.equal(talk(db, saveId, 'N1').offer.questId, 'dice-roll');
   go(db, saveId, 'L2');
   assert.equal(talk(db, saveId, 'N2').offer, null);
+});
+
+test('with a complete ladder N2 offers nothing until rung 1 is done, then offers its first open quest and lists the rest', () => {
+  const { db, saveId } = ready();
+  const quests = standInLadder();
+  go(db, saveId, 'L2');
+  assert.equal(talk(db, saveId, 'N2', { quests }).offer, null);
+  for (const q of quests.filter((q) => q.rung === 1 && (q.id === 'dice-roll' || q.tier !== 'hard'))) {
+    markSolved(db, saveId, q.id);
+  }
+  const result = talk(db, saveId, 'N2', { quests });
+  assert.equal(result.offer.questId, 'conditionals-easy');
+  assert.equal(result.open.length, 8);
+  assert.ok(result.open.every((q) => ['conditionals', 'loops', 'functions'].some((s) => q.questId.startsWith(s))));
+});
+
+test('with a complete ladder N7 offers the final exam only when the other 52 quests are solved', () => {
+  const { db, saveId } = ready();
+  const quests = standInLadder();
+  go(db, saveId, 'L3');
+  go(db, saveId, 'L6');
+  const others = quests.filter((q) => q.id !== 'final-exam');
+  for (const q of others.slice(0, 51)) markSolved(db, saveId, q.id);
+  assert.equal(talk(db, saveId, 'N7', { quests }).offer, null);
+  markSolved(db, saveId, others[51].id);
+  const offer = talk(db, saveId, 'N7', { quests }).offer;
+  assert.equal(offer.questId, 'final-exam');
 });
 
 test('a flavor npc has no offer', () => {
@@ -157,6 +205,7 @@ test('the stronghold shows both the captain and the final boss', () => {
     ['N6', 'N7'],
   );
   assert.equal(talk(db, saveId, 'N7').offer, null);
+  assert.deepEqual(talk(db, saveId, 'N7').open, []);
 });
 
 test('the quest an NPC offers is told in the language of the save', () => {

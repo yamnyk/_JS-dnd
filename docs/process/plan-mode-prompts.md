@@ -183,3 +183,138 @@ PROCESS
 - Update docs/process/deferred-findings.md statuses as part of the plan's last task, so the register stays the source of truth.
 - End with the execution handoff question (subagent-driven or native) and your recommendation.
 ```
+
+## Extra plan: Play harness follow-up (PR #14)
+
+A contributor's pull request (#14, branch `feature/harness-token-savings`) moves `/play` into a skill, adds a `resume` command, a play hook, a `move-smith` subagent, and `play.sh`. My review found problems and I made decisions. This plan applies them. Paste this into plan mode.
+
+```
+Read the review decisions below, then the PR itself: `gh pr view 14` and `gh pr diff 14` (read-only, the PR may or may not be merged yet). Then read CLAUDE.md, docs/superpowers/specs/2026-11-07-js-dnd-campaign-design.md, docs/superpowers/plans/2026-11-09-hero-status-bar.md, and docs/process/deferred-findings.md. Run `node dev/cli.js status` and read the current state first.
+
+GOAL
+Take the contributor's token-saving harness and make it safe and complete on top of the current game (languages, vitals, the sealed dice, the front door CLI). Cheaper turns are the point, but not at the price of breaking the tamper rules, the language, or the state the Master relies on. I told you to be extremely careful: I do not know this part of the harness well and I am trusting your judgment. A wrong move here can silently break every play session, so prefer small steps, prove each one with a test that failed first, and stop and ask when something is unclear.
+
+WHAT THE PR DOES (verify this against the diff, do not trust this summary)
+- `.claude/skills/play/` replaces `.claude/commands/play.md`: a core `SKILL.md` plus `onboarding.md`, `combat.md`, `stamina.md`, `ending.md`, `vitals.md` that the Master reads when the moment comes. `SKILL.md` runs the command `node game/cli.js resume` before the model sees the prompt and inlines its JSON.
+- `game/resume.js` (`resumeState`, `stateLine`), a `resume` case in `game/cli-main.js`, and an exit-0 path for `resume` in `game/cli.js` (the front door).
+- `game/play-hook.js` wired in `.claude/settings.json` for `UserPromptSubmit` and `SessionStart` with matcher `compact`. A `play_sessions` table (migration 14) marks which Claude Code sessions typed `/play`. Those sessions get a one-line `[game]` state line per prompt, and the full state after a compaction.
+- `.claude/agents/move-smith.md` (Sonnet, Bash only, `omitClaudeMd: true`) writes the hidden tests for advanced combat moves.
+- `play.sh` starts `claude --model sonnet` with `/play` as the first prompt.
+
+DECISIONS I ALREADY MADE (do not re-ask these)
+1. World writing gets its own subagent on Opus. The play session stays on Sonnet (set by `play.sh`), and a new `world-smith` agent (`.claude/agents/world-smith.md`, `model: opus`, `tools: Bash`, `omitClaudeMd: true`) writes the whole world: names and descriptions for all six locations, and names, descriptions, and voices for all seven NPCs including the final boss, in the setting's voice and the save's language, and submits it with `node game/cli.js world fill --data -` on stdin. The Master still runs the player conversation (race, class, scores, name, the setting choice) and hands world-smith the chosen setting (name, description, voice), the hero, and the language. World text is not secret, so unlike move-smith it may report what it wrote. The quality bar is the whole point of using Opus here: no slop, no AI-speak, real specificity per setting. It must follow the language pack (glossary, banned phrases, voice tips) returned by `lang show`.
+2. The auto-approval rule `Bash(node game/cli.js *)` does NOT go in the committed `.claude/settings.json`. Remove it from there. `play.sh` passes it on the command line as `--allowedTools "Bash(node game/cli.js *)"`, so only sessions started through `play.sh` get it. The skill's own `allowed-tools` frontmatter (a grant for the invoking turn only) stays. Documented behavior, from the Claude Code docs: `--allowedTools` is a per-invocation flag, a skill's `allowed-tools` clears when the player sends the next message, and a skill's `model` override lasts only for the current turn.
+3. Fix the hook crash risk. `game/play-hook.js` imports `resume.js`, which imports `combat-engine.js`, which pulls in the sealed `game/dice.js` and `game/rolls.js`. A static import failure happens before the hook's try/catch. Move the read-only fight reads (`openFight`, `getFightState`, and what they need) into a new `game/fight-state.js` that imports no sealed code, and have `combat-engine.js` and `resume.js` use it. Behavior of combat must not change at all. Pin it with a test like the existing status line tamper test: delete or break both sealed files, run the hook, and expect exit 0 and no stack trace. Note from the docs: a hook that exits 1 is a non-blocking error, only exit 2 blocks a prompt, so this is Minor in effect but cheap and worth doing.
+4. One source of truth for the game state. Move everything `cli-main.js` adds to the `resume` output (`language`, the language `pack` from `packFor`, `vitals` with the item count, `raceDisplay` and `classDisplay`) into `resumeState` in `game/resume.js`, so the `resume` command, the compaction dump, and the per-prompt line all share it. Add health and gold to the `[game]` line (for example `HP 9/12 | 15 gold`). Keep the line short: it is paid on every prompt.
+5. Chain log calls with `;` instead of `&&` in the skill text, and tell the Master to read both lines of output. A failed log call must not swallow the real action, and each part still matches the allow rule on its own.
+6. Drop the contributor's ending-test commit if it is still there: `pause` already exists in `tests/game/ending.test.js`, and the test did not flake on main in 8 of 8 runs. Verify, then remove it only if it is redundant.
+7. `omitClaudeMd` is a real documented subagent field (Claude Code v2.1.271 or later; unknown fields are ignored without an error). The README requirements must state the minimum Claude Code version that the features used need. Find out what each used feature needs from the docs instead of guessing, and say which ones are unverified.
+
+STEP 0: VERIFY BEFORE PLANNING
+For each claim above, read the current code and run a probe on a throwaway save (`JSDND_GAME_DB`, `JSDND_PLAYER_DIR` pointing at temp paths): the hook with a missing `game/dice.js`, the compaction output today versus `resume`, the `[game]` line today. Label every result: verified by running, inference only, or already fixed. If the PR is not merged yet you cannot run its code in this repo: say so, and plan against the diff, and ask me how I want to sequence it (see below).
+
+CONSTRAINTS
+- Commit and push yourself with plain messages. NEVER a `Co-Authored-By` line, a "Generated with Claude" line, or any Claude attribution in commits or PR text. Never force-push or rewrite pushed history without asking. Ask before other outward-facing actions, including any comment, review, or push on the contributor's PR or branch.
+- No em-dash and no en-dash anywhere: code, comments, docs, commit text, output.
+- `game/dice.js` and `game/rolls.js` are sealed in `game/dice.sha256`. Never edit or format them. A missing or broken one must still reach the front door tamper path (exit 2, reset) and must never crash `game/reset.js`, `game/statusline.js`, or the new hook.
+- Game state only in SQLite through scripts. Migrations are append-only: the PR's `play_sessions` is migration 14 and nothing already applied may change.
+- Player-facing and Master-facing text: English text for the Master brief stays English. Anything the player reads goes through `game/locales/{en,uk}.js` or `quests/text`. The ESLint guard `playerFacing` list in `eslint.config.js` must stay green and cover any new module that prints player text. New Ukrainian text goes on `docs/i18n/uk-review-checklist.md`.
+- Tests first for every change: write the test, watch it fail for the right reason, then fix, then run the whole suite, `npm run lint`, `npm run format:check`, and the dash scan. Name the production change that would make each test fail before writing it, and mutation-check the important ones.
+- Machine-readable surfaces stay stable: CLI command names, JSON keys of existing commands, DB columns, honor kinds, quest ids. `resume` is new, so its shape is yours to define, but write it down.
+- `.claude/skills/play/*.md` and `.claude/agents/*.md` are what the Master reads. They must say exactly what the scripts do. The existing tests in `tests/game/play-command.test.js` pin the brief; extend them instead of loosening them.
+- Keep each change as small as its reason. No refactors for taste.
+
+ASK ME BEFORE ASSUMING: USE AskUserQuestion, ONE DECISION AT A TIME OR SMALL RELATED GROUPS, WITH YOUR RECOMMENDATION FIRST. DO NOT WRITE THE PLAN UNTIL THESE ARE ANSWERED:
+1. Sequencing. The PR is the contributor's branch. Options: I merge it first and you plan a follow-up on main; you plan changes the contributor applies on his branch (I post your review comment); or you apply the changes on main after merging. Recommend one and say what each costs, including who gets to commit what.
+2. world-smith failure path. If Opus is not available on a player's plan or the call fails, what should happen? Options: the Master writes the world itself on the session model, the Master tells the player and stops, or world-smith falls back to Sonnet. Recommend one.
+3. world-smith inputs and output. What exactly does the Master hand over, what does the agent run first (`world skeleton`, `lang show`), what does it report back (names only, or a short summary), and how does the Master then describe the arrival? Show me a draft of the agent file text before the plan is final, because its prompt decides the quality of every world.
+4. `resume` size. The state is paid once per `/play` and again after a compaction. Which fields must be in the compaction dump and which can be fetched when needed? Show the byte size of each field on a realistic save.
+5. The `[game]` line fields. Which exact fields, in which order, in which language? It is injected on every player prompt, so every token counts.
+6. Minimum versions. After you check the docs, which Claude Code version do the skill, the hook, `--allowedTools`, and `omitClaudeMd` each need, and what happens on an older version (silent degrade versus a broken `/play`)? Recommend what the README and `play.sh` should say or check.
+7. Anything you find that is not in this prompt: list it and ask whether it joins the plan.
+
+REVIEW FOCUS (each line gets a test or a probe)
+- The hook with `game/dice.js` missing, and with `rolls.js` containing a syntax error: exit 0, no stack trace on stdout or stderr.
+- The hook in a session that never ran `/play`, with no database, with a database from before migration 14, and with a busy database: silent, exit 0, fast.
+- The compaction output carries the language pack, vitals, and display names, and is valid text for the Master, in both languages.
+- `resume` on a fresh install, on a tampered install (`tamper: true`, exit 0 through the front door), with a broken database, and with a collapsed hero.
+- `play.sh` with `claude` missing, with extra arguments, and with the allow flag present exactly once. The committed `.claude/settings.json` has no allow rule.
+- world-smith: a rejected `world fill` (banned phrase, duplicate name, missing slot) is retried by the agent; the written world is in the save language; the final boss gets a voice that fits a last enemy; it never writes to anything but the game through `node game/cli.js`.
+- `;` chaining: a failing log call followed by a successful action.
+- A returning player resuming a half-onboarded save (hero but no world, world setting but no fill).
+
+PROCESS
+- Read the real code and tests first. Separate confirmed facts from inference and label inference as inference. Never present a guess as evidence.
+- Write the plan to docs/superpowers/plans/ using the writing-plans skill: header, Global Constraints, Decisions (mine versus your calls), Review Focus with a test per line, tasks (fight-state split, resume enrichment, hook, play.sh and settings, skill text, world-smith, docs and README, final review), each with exact interfaces and test names, test first.
+- Add a short "Live checks for Gogi" list at the end: the things only a real `claude` session can prove (the `/play` start with `resume` inlined, the `[game]` line on a prompt, a compaction in a long session, `play.sh` on Sonnet, the world-smith run on Opus, the allow flag skipping approvals).
+- Update docs/process/deferred-findings.md with anything deferred.
+- End with the execution handoff question (subagent-driven or native) and your recommendation.
+```
+
+## Extra plan: The curriculum is missing, so the boss opens after three quests
+
+Real players reach the final boss after three quests, having only touched strings and a little array work. This section records why, and the prompt to plan the fix. Paste the fenced block into plan mode.
+
+Why it happens (all verified by reading the code on 2026-11-09, none of it is a guess):
+
+1. **The content was never built.** `quests/index.js` registers three quests (`dice-roll`, `string-shout`, `array-sum`). Plan 3 shipped them on purpose as "3 starter quests" and said the full curriculum "is written later as content". The catalog of 17 subjects and 51 quest templates (`docs/superpowers/specs/2026-11-08-curriculum-catalog.md`) is still a draft, waiting for the owner to answer four open questions and trim it. Nothing in the process ever made building it a task with an owner or a date; it was queued behind the multi-language plan, the status bar, and the harness work.
+2. **Even with 51 quests registered, only three could be offered.** `world/skeleton.js` gives a single `questId` to N1, N2, and N3 only, and `talk` in `game/world.js` (lines 207 to 216) offers only `spot.questId`. N4 to N6 hold no quest. The handout was designed for three.
+3. **"Every quest solved" means "every quest in the registry".** `getProgress` returns `total: QUESTS.length` (`game/quests.js`), `endingStatus` unlocks when `questsSolved === progress.total` (`game/ending.js`), and the boss gate in `fight begin` checks `remaining.length`. So with three quests, "the whole campaign" is three quests. Nothing ties the ending to the curriculum, the six rungs in spec section 5.3, or the promise in the README.
+4. **The boss is only a fight.** N7 is always tier `tough` (26 HP, AC 14). Beating it needs no JavaScript at all, so even a full curriculum would end in a dice fight that tests none of it.
+5. **The promise and the product disagree.** The README opens with "solid JS fundamentals up to async" and says "only three starter quests exist" far down in the Status section. The Master's `ending.md` tells it to build dread and offer the boss as soon as the scripts allow.
+
+```
+Read docs/superpowers/specs/2026-11-08-curriculum-catalog.md in full, then docs/superpowers/specs/2026-11-07-js-dnd-campaign-design.md (sections 5.2, 5.3, 5.5, 5.10), docs/superpowers/plans/2026-11-07-quest-engine.md, CLAUDE.md, and the multi-language and hero status bar plans in docs/superpowers/plans/. Read the real code before you trust any of this prompt: quests/index.js, quests/*.js, quests/text/, world/skeleton.js, game/world.js (talk), game/quests.js (getProgress, requireQuestAccess, judgeQuest, revokeSolve), game/ending.js, game/combat-engine.js (beginFight and the boss gate), game/ending-stats.js, the skill files in .claude/skills/play/ (or .claude/commands/play.md if the skill is not merged yet), and tests/quests/. Run `node dev/cli.js status` first.
+
+GOAL
+Make the campaign real. A player must meet the whole ladder (values to async, the event loop, and fetch) before the final boss, the boss must mean something, and nobody must be able to reach the ending while the curriculum is unfinished. Fix the cause, not the symptom: the five causes are listed above, check each one against the code yourself and say which are still true.
+
+THE FIVE CAUSES (verify each, label it "verified by running" or "inference")
+1. Only three quests exist. 2. The skeleton and `talk` can hand out only three. 3. "All quests solved" is relative to the registry size. 4. The boss is a plain fight with no JS in it. 5. The README and the Master brief promise more than the game has.
+
+DECISIONS ALREADY MADE (do not re-ask; they are in the catalog)
+- 17 subjects, 3 quest templates each (easy, medium, hard), 51 in total, built in one run. Callbacks only as preparation for array and string methods. Array methods and string methods are their own subjects. Error handling is its own subject. fetch and JSON are one subject. Browser topics are out, with Playwright-style tests as a later item.
+- Quests are setting-neutral: a template holds only the technical spec, the expected results, and code style directions. The Master dresses it in the world's skin.
+- The universal quest template: `id`, `title`, `rung`, `complexity`, `subject`, `tier`, `spec`, `expected` (2 to 4 examples), `style.specific`, `stub`, `check(mod)`. Plus one general style list shown with every quest.
+- Check rules: generated inputs on every run so hardcoded answers fail; no network (fetch is a parameter with `fetch` as the default, and the check passes a fake); timer quests use `node:test` mock timers inside the child process; a check reports the first failing case plainly.
+- Every quest has English and Ukrainian text in the catalogs (`quests/text/en.js` and `uk.js`), and every Ukrainian string goes on `docs/i18n/uk-review-checklist.md`. Master-facing text stays English.
+
+CONSTRAINTS
+- Commit and push yourself with plain messages. NEVER a `Co-Authored-By` line, a "Generated with Claude" line, or any Claude attribution. Never force-push or rewrite pushed history without asking. Ask before other outward-facing actions.
+- No em-dash and no en-dash anywhere.
+- `game/dice.js` and `game/rolls.js` are sealed in `game/dice.sha256`: never edit or format them. Tamper must stay exit 2 through the front door.
+- Game state only in SQLite through scripts. Migrations are append-only. Machine-readable surfaces stay stable unless I approve a change (CLI command names, JSON keys, DB columns, honor kinds, existing quest ids).
+- Deterministic work in scripts, judgment work (quest wording, reference solutions, Ukrainian text) by agents, with a script that proves every quest: a reference solution passes, a wrong one fails, a hardcoded one fails (the pattern in tests/quests/solutions/ and the starter quest tests). A quest without those three proofs does not count as built.
+- Tests first for every change, mutation-check the important ones, the whole suite plus `npm run lint` and `npm run format:check` and the dash scan after every task.
+- Player-facing text goes through the catalogs; the ESLint player-facing guard in eslint.config.js must stay green.
+- Existing saves must keep working: a player with three solved quests and a won boss must land somewhere sensible, and a quest added after the ending was unlocked must reopen the road (that rule already exists in `endingStatus`; keep it).
+
+ASK ME BEFORE ASSUMING: USE AskUserQuestion, ONE DECISION AT A TIME OR SMALL RELATED GROUPS, WITH YOUR RECOMMENDATION FIRST. DO NOT WRITE THE PLAN UNTIL THESE ARE ANSWERED:
+1. The interim guard. Until the whole ladder exists, what do players get when they finish the quests that do exist? Options: the boss and the ending stay locked until every rung has its quests (a constant in code that the tests pin), with the Master telling the player the road ahead is still being built; or a per-rung release where the boss gate counts only the rungs that are built; or nothing. Recommend one, and say what each costs, including what a player who has already won the boss sees.
+2. The four open questions in the catalog, one by one: where `dice-roll` sits (the spec wants it early), the general style list, which hard quests to cut, and the handout. Show me what each choice changes.
+3. The handout, because causes 2 and 5 depend on it. With 51 quests and 7 NPCs, how are quests offered? Options: each of N1 to N6 owns a rung and `talk` offers the next unsolved quest of that rung; any NPC offers the next quest and the Master picks who speaks; or the Master asks for a quest from a quest board script. I dislike a fixed quest per NPC, so show me the least static option that is still cheap and testable, and what it does to the skeleton file, `talk`, and the Master brief.
+4. Quest order. Today a quest opens only when every earlier quest in the registry is solved, in strict order. With 51 quests, one stuck beginner blocks everything. Options: keep strict global order, open the next rung only when the current rung is done and let the player pick any quest inside a rung, or open a rung when most of the previous one is done. Recommend one, and say what it does to `requireQuestAccess`, `quest list`, the ending, and the stats page.
+5. What the boss is. Options: keep the plain tough fight but only after all rungs; require an exam inside the fight, one or more advanced moves (the move-smith path) at difficulty 5 drawn from subjects the player solved, so the boss can only be beaten by writing JS; or a multi-phase boss with one move per rung. Recommend one, and say what it costs in tokens and in implementation, and how a fresh player with no hints would experience it.
+6. Existing saves. Players already have three solved quests and some have beaten the boss. Options: leave them, and the boss must be beaten again once new quests are solved; or mark old wins as old. Say what `endingStatus` does today for each.
+7. Build order and review gates. A release per rung (6 releases) or one big release. Which agents write quests, how many quests per batch, a fresh reviewer per rung, and when I review the Ukrainian drafts. Give me a realistic size of the work: files, tests, and the number of reference, wrong, and hardcoded solution files.
+8. The token cost for the Master. `quest list` returns every quest, and the skill text grows with the ladder. Show me the size of `quest list` at 51 quests and propose what the Master should be shown instead.
+9. Anything you find while verifying that is not in this prompt: list it and ask whether it joins the plan.
+
+REVIEW FOCUS (each line gets a test or a probe)
+- Registry invariants for all 51: unique ids, rung order, every quest reachable through the handout, none unreachable, none offered twice, every id has English and Ukrainian text and a stub, the title and brief placeholders match across languages.
+- A fresh game played quest by quest through the whole ladder with the reference solutions, in both languages, reaching the boss only after the last rung.
+- A game where the player gets stuck, reverts a solve (`quest revoke`), changes language, and meets a tamper reset in the middle of a rung.
+- The ending gate and the stats page with 51 quests: complexity chart scale, time estimates, "subjects learned" (now buildable), the page size.
+- Timer, promise, fetch, and event loop checks: deterministic, fast, no real network, no flake over 100 runs, a never-settling promise gives a named error.
+- The boss: cannot be reached early by any route (`fight begin`, `talk`, a quest fight), cannot be won without the JS part if you choose the exam, and still works with tiredness penalties and a collapse in the middle.
+- Existing saves with three solved quests, with a won boss, and with an unlocked ending page.
+- The Master brief size, `quest list` size, and `resume` size with 51 quests.
+- README, README.uk.md, and the Master brief tell the truth about how far the ladder goes at every step of the build.
+
+PROCESS
+- Separate confirmed facts from inference and label inference as inference. Never present a guess as evidence.
+- Write the plan to docs/superpowers/plans/ using the writing-plans skill: header, Global Constraints, Decisions (mine versus your calls), Review Focus with a test per line, tasks. Put the structural work first (interim guard, handout, order, boss), then the content in rung-sized batches, each batch ending with its proofs, a fresh review, and a Ukrainian review checklist update. Each task with exact interfaces and test names, test first.
+- Update docs/process/deferred-findings.md and the dev notes in the plan's last task.
+- Add a short "Live checks for Gogi" list: a real playthrough of one rung in each language, the boss fight, and a mid-game language switch.
+- End with the execution handoff question (subagent-driven or native) and your recommendation.
+```

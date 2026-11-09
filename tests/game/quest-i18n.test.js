@@ -171,6 +171,12 @@ test('every quest has text in both languages, and the code part of a starter fil
       assert.ok(text.title.length > 0 && text.brief.length > 0);
       assert.match(text.stub, /export function/);
       assert.ok(Array.isArray(text.specific));
+      // 2 to 4 examples the player sees; the check tests more than these.
+      assert.ok(Array.isArray(text.expected) && text.expected.length >= 2 && text.expected.length <= 4, quest.id);
+      assert.ok(
+        text.expected.every((line) => typeof line === 'string' && line.trim().length > 0),
+        quest.id,
+      );
     }
     const codeOf = (stub) =>
       stub
@@ -201,7 +207,7 @@ test('Ukrainian quest titles, briefs, and style directions carry no stray Latin 
   const texts = [...generalStyle('uk')];
   for (const quest of QUESTS) {
     const text = questText(quest.id, 'uk');
-    texts.push(text.title, text.brief, ...text.specific);
+    texts.push(text.title, text.brief, ...text.specific, ...text.expected);
   }
   for (const text of texts) assert.doesNotMatch(withoutAllowedLatin(text), /[A-Za-z]/, text);
 });
@@ -212,7 +218,7 @@ test('no quest text has an em-dash or an en-dash', () => {
     const texts = [...generalStyle(lang)];
     for (const quest of QUESTS) {
       const text = questText(quest.id, lang);
-      texts.push(text.title, text.brief, text.stub, ...text.specific);
+      texts.push(text.title, text.brief, text.stub, ...text.specific, ...text.expected);
     }
     for (const text of texts) for (const dash of dashes) assert.ok(!text.includes(dash), `${lang}: ${text}`);
   }
@@ -357,4 +363,14 @@ test('a solution that returns undefined for the range check shows undefined too'
   );
   assert.equal(result.status, 'fail');
   assert.ok(!/[{}]|null/.test(result.got), result.got);
+});
+
+test('quest start carries the expected examples of the quest in the language of the save', () => {
+  const { db, saveId, playerDir } = worldSave();
+  for (const language of ['en', 'uk']) {
+    setLanguage(db, saveId, language);
+    const started = startQuest('dice-roll', { playerDir, db, saveId });
+    assert.deepEqual(started.expected, questText('dice-roll', language).expected);
+    assert.ok(started.expected.length >= 2);
+  }
 });

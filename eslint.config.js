@@ -22,6 +22,16 @@ export const playerFacing = [
   'quests/dice-roll.js',
   'quests/messages.js',
   'quests/string-shout.js',
+  'quests/values-fahrenheit.js',
+  'quests/values-describe.js',
+  'quests/values-to-number.js',
+  'quests/strings-count-label.js',
+  'quests/strings-middle.js',
+  'quests/arrays-first-last.js',
+  'quests/arrays-rotate.js',
+  'quests/objects-full-name.js',
+  'quests/objects-count-words.js',
+  'quests/objects-merge-deep.js',
   'quests/style.js',
 ];
 

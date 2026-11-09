@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { SKELETON } from '../../world/skeleton.js';
 import { QUESTS } from '../../quests/index.js';
+import { standInLadder } from '../game/helpers.js';
 
 const bySlot = Object.fromEntries(SKELETON.locations.map((l) => [l.slot, l]));
 
@@ -44,19 +45,42 @@ test('no location has more than 4 exits (choice prompts take 2 to 4 options)', (
   }
 });
 
-test('every npc stands in a real location and quest holders follow the registry order', () => {
+test('every npc stands in a real location, and N1 to N6 own rungs 1 to 6 while N7 owns the capstone rung', () => {
   for (const npc of SKELETON.npcs) assert.ok(bySlot[npc.location], `${npc.slot} is in unknown ${npc.location}`);
-  const holders = SKELETON.npcs.filter((n) => n.questId).map((n) => n.questId);
   assert.deepEqual(
-    holders,
-    QUESTS.map((q) => q.id),
+    SKELETON.npcs.map((n) => [n.slot, n.rung]),
+    [
+      ['N1', 1],
+      ['N2', 2],
+      ['N3', 3],
+      ['N4', 4],
+      ['N5', 5],
+      ['N6', 6],
+      ['N7', 7],
+    ],
   );
-  for (const id of holders) assert.ok(QUESTS.some((q) => q.id === id));
+  assert.ok(
+    SKELETON.npcs.every((n) => n.questId === undefined),
+    'a fixed quest per NPC is gone',
+  );
+});
+
+test('every quest of the real registry has exactly one NPC that owns its rung', () => {
+  for (const quest of QUESTS) {
+    const owners = SKELETON.npcs.filter((n) => n.rung === quest.rung);
+    assert.equal(owners.length, 1, `${quest.id} on rung ${quest.rung}`);
+  }
+});
+
+test('a complete ladder spreads 13, 9, 12, 6, 6, 6 quests over N1 to N6 and gives N7 only the capstone', () => {
+  const perOwner = Object.fromEntries(SKELETON.npcs.map((n) => [n.slot, 0]));
+  for (const quest of standInLadder()) perOwner[SKELETON.npcs.find((n) => n.rung === quest.rung).slot] += 1;
+  assert.deepEqual(perOwner, { N1: 13, N2: 9, N3: 12, N4: 6, N5: 6, N6: 6, N7: 1 });
 });
 
 test('N7 is the final boss at the stronghold, holds no quest, and shares L6 with the captain', () => {
   const boss = SKELETON.npcs.find((n) => n.slot === 'N7');
-  assert.deepEqual(boss, { slot: 'N7', location: 'L6', role: 'boss' });
+  assert.deepEqual(boss, { slot: 'N7', location: 'L6', role: 'boss', rung: 7 });
   assert.deepEqual(
     SKELETON.npcs.filter((n) => n.location === 'L6').map((n) => n.slot),
     ['N6', 'N7'],

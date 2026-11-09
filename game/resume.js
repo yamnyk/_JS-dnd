@@ -2,12 +2,28 @@ import { getHero } from './hero.js';
 import { getHonor } from './honor.js';
 import { worldStatus, getSetting, look } from './world.js';
 import { getProgress } from './quests.js';
+import { QUESTS } from '../quests/index.js';
+import { ladderStatus } from '../quests/curriculum.js';
 import { getFightState } from './fight-state.js';
 import { currentStamina } from './stamina.js';
 import { readVitals } from './vitals.js';
 import { countItems } from './inventory.js';
 import { displayName } from './rules.js';
 import { effectiveLanguage, getLanguage, packFor } from './i18n.js';
+
+// Counts, the rung to play, and the ids open now. The long lists of every solved and unsolved id are left out:
+// this is paid again after every compaction.
+function questsPart(progress) {
+  const rungOf = (id) => QUESTS.find((q) => q.id === id).rung;
+  return {
+    solved: progress.solved.length,
+    total: progress.total,
+    rung: progress.open.length ? Math.min(...progress.open.map(rungOf)) : null,
+    open: progress.open,
+    rungs: progress.rungs,
+    ladderComplete: ladderStatus().complete,
+  };
+}
 
 // Everything the Master needs to pick a game back up, in one read. It never writes, and it uses only
 // modules that do not depend on the sealed dice files, so the play hook can run when they are broken.
@@ -29,7 +45,7 @@ export function resumeState(db, saveId) {
     world,
     setting: getSetting(db, saveId),
     here: hero && world.complete ? look(db, saveId) : null,
-    quests: getProgress(db, saveId),
+    quests: questsPart(getProgress(db, saveId)),
     fight: getFightState(db, saveId),
     honor: getHonor(db, saveId),
     stamina: { band, collapsed, mental, ...(collapsed ? { hours } : {}) },
@@ -49,7 +65,14 @@ export function stateLine(db, saveId) {
     `at ${here.location.name} (${here.location.slot})`,
     `HP ${vitals.hp}/${vitals.maxHp}`,
     `${vitals.gold} gold`,
-    `quests ${quests.solved.length}/${quests.total}${quests.remaining.length ? `, next ${quests.remaining[0]}` : ''}`,
+    // The rung to play, or why there is nothing to play: the road is unfinished, or everything is solved.
+    `quests ${quests.solved}/${quests.total}, ${
+      quests.rung !== null
+        ? `rung ${quests.rung}`
+        : quests.ladderComplete
+          ? 'all solved'
+          : 'road ahead still being built'
+    }`,
     fight
       ? `fight: hero ${fight.hero.hp}/${fight.hero.hpMax} HP vs ${fight.enemy.name} ${fight.enemy.hp}/${fight.enemy.hpMax} HP`
       : 'no fight',

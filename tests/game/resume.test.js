@@ -12,6 +12,8 @@ import { setLanguage, packFor } from '../../game/i18n.js';
 import { beginFight, heroAttack } from '../../game/combat-engine.js';
 import { grantItem } from '../../game/inventory.js';
 import { resumeState, stateLine } from '../../game/resume.js';
+import { QUESTS } from '../../quests/index.js';
+import { markSolved } from './helpers.js';
 import { SETTING, goodWorld } from './world-fixtures.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -97,7 +99,7 @@ test('the state line gives place, health, gold, quests, fight, stamina, and hono
   const { db, saveId } = install();
   assert.equal(
     stateLine(db, saveId),
-    `[game] at ${L1} (L1) | HP 12/12 | 0 gold | quests 0/3, next dice-roll | no fight | stamina fresh | honor 0`,
+    `[game] at ${L1} (L1) | HP 12/12 | 0 gold | quests 0/${QUESTS.length}, rung 1 | no fight | stamina fresh | honor 0`,
   );
 });
 
@@ -107,7 +109,7 @@ test('the state line stays in English labels for a Ukrainian save, and shows an 
   hurtInFight(db, saveId);
   assert.equal(
     stateLine(db, saveId),
-    `[game] at ${L1} (L1) | HP 6/12 | 15 gold | quests 0/3, next dice-roll | fight: hero 6/12 HP vs ${goodWorld().npcs.N1.name} 14/14 HP | stamina fresh | honor 0`,
+    `[game] at ${L1} (L1) | HP 6/12 | 15 gold | quests 0/${QUESTS.length}, rung 1 | fight: hero 6/12 HP vs ${goodWorld().npcs.N1.name} 14/14 HP | stamina fresh | honor 0`,
   );
 });
 
@@ -155,4 +157,31 @@ test('the per-prompt line from the hook carries health and gold', () => {
   hook({ session_id: 'game', hook_event_name: 'UserPromptSubmit', prompt: '/play' });
   const line = hook({ session_id: 'game', hook_event_name: 'UserPromptSubmit', prompt: 'I walk on' }).stdout.trim();
   assert.match(line, /\| HP 12\/12 \| 0 gold \|/);
+});
+
+test('the quests part of the resume state is small: counts, the rung to play, the open ids, and the ladder', () => {
+  const { db, saveId } = install();
+  const { quests } = resumeState(db, saveId);
+  assert.deepEqual(quests, {
+    solved: 0,
+    total: QUESTS.length,
+    rung: 1,
+    open: QUESTS.map((q) => q.id),
+    rungs: [{ rung: 1, solved: 0, total: QUESTS.length }],
+    ladderComplete: false,
+  });
+  assert.equal('remaining' in quests, false, 'the long list of every unsolved id is gone');
+});
+
+test('the line points at the rung to play, then says the road is unfinished, once everything built is solved', () => {
+  const { db, saveId } = install();
+  for (const quest of QUESTS.slice(0, 4)) markSolved(db, saveId, quest.id);
+  assert.match(stateLine(db, saveId), new RegExp(`\\| quests 4/${QUESTS.length}, rung 1 \\|`));
+  for (const quest of QUESTS.slice(4)) markSolved(db, saveId, quest.id);
+  const done = resumeState(db, saveId).quests;
+  assert.deepEqual([done.solved, done.rung, done.open], [QUESTS.length, null, []]);
+  assert.match(
+    stateLine(db, saveId),
+    new RegExp(`\\| quests ${QUESTS.length}/${QUESTS.length}, road ahead still being built \\|`),
+  );
 });

@@ -12,16 +12,17 @@ export const SKELETON = {
     { slot: 'L5', role: 'archive', exits: ['L2', 'L4', 'L6'] },
     { slot: 'L6', role: 'stronghold', exits: ['L3', 'L5'] },
   ],
-  // NPCs holding a quest hand them out in registry order (quests/index.js). The rest are
-  // flavor and hint givers.
+  // Who hands out which quests: one table. `rung` is the rung of the ladder (quests/curriculum.js) whose quests
+  // this NPC offers, so a rung moves the hero to a new place. N7 owns the capstone, the final exam, which opens
+  // only when every other quest is solved. Change an owner here and nowhere else.
   npcs: [
-    { slot: 'N1', location: 'L1', role: 'mentor', questId: 'dice-roll' },
-    { slot: 'N2', location: 'L2', role: 'trader', questId: 'string-shout' },
-    { slot: 'N3', location: 'L5', role: 'keeper', questId: 'array-sum' },
-    { slot: 'N4', location: 'L3', role: 'wanderer' },
-    { slot: 'N5', location: 'L4', role: 'recluse' },
-    { slot: 'N6', location: 'L6', role: 'captain' },
-    // The final boss. Beating them after every quest is solved ends the campaign.
-    { slot: 'N7', location: 'L6', role: 'boss' },
+    { slot: 'N1', location: 'L1', role: 'mentor', rung: 1 },
+    { slot: 'N2', location: 'L2', role: 'trader', rung: 2 },
+    { slot: 'N3', location: 'L5', role: 'keeper', rung: 3 },
+    { slot: 'N4', location: 'L3', role: 'wanderer', rung: 4 },
+    { slot: 'N5', location: 'L4', role: 'recluse', rung: 5 },
+    { slot: 'N6', location: 'L6', role: 'captain', rung: 6 },
+    // The final boss. The fight opens only after the ladder is complete and the final exam is solved.
+    { slot: 'N7', location: 'L6', role: 'boss', rung: 7 },
   ],
 };

@@ -88,3 +88,18 @@ test('the Ukrainian README gives 2.1.271 as the minimum and 2.1.311 as the teste
   assert.match(uk, /2\.1\.271 або новішої/);
   assert.match(uk, /перевірено на 2\.1\.311/);
 });
+
+test('the Ukrainian README tells how much of the ladder is built, derived from the registry', async () => {
+  const { QUESTS } = await import('../quests/index.js');
+  const { ladderStatus, LADDER_QUEST_COUNT } = await import('../quests/curriculum.js');
+  const uk = read('README.uk.md');
+  const intro = uk.slice(0, uk.indexOf('## Як грати'));
+  if (ladderStatus().complete) {
+    assert.doesNotMatch(uk, /будується/);
+  } else {
+    assert.match(intro, /будується/);
+    assert.match(intro, new RegExp(`${QUESTS.length} із ${LADDER_QUEST_COUNT}`));
+    assert.match(intro, /бос/);
+    assert.doesNotMatch(intro, /Пройди кампанію, і матимеш/);
+  }
+});

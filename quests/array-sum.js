@@ -15,6 +15,8 @@ const randomNumbers = () => Array.from({ length: pick(9) }, () => pick(41) - 20)
 export default {
   id: 'array-sum',
   rung: 1,
+  subject: 'arrays',
+  tier: 'medium',
   complexity: 2,
 
   async check(mod) {
