@@ -6,6 +6,7 @@ import { inTransaction } from './db.js';
 import { addHonorEvent, getHonor } from './honor.js';
 import { applyHonorRule, toneFor } from './honor-rules.js';
 import { healForSolve, addGold, GOLD_PER_COMPLEXITY } from './vitals.js';
+import { OPENING_ID, CAPSTONE_ID, LADDER_RUNGS } from '../quests/curriculum.js';
 import { grantItem, revokeQuestItem } from './inventory.js';
 import { runQuestCheck } from './quest-runner.js';
 import { QUESTS, getQuest } from '../quests/index.js';
@@ -44,17 +45,36 @@ const hintsUsed = (db, saveId, questId, epoch) =>
     .prepare('SELECT COUNT(*) AS n FROM quest_hints WHERE save_id = ? AND quest_id = ? AND epoch = ?')
     .get(saveId, questId, epoch).n;
 
-// A quest opens for a hero in a finished world once every earlier quest is solved in this epoch.
+// What a quest waits for. Rung 1 waits for nothing. A later rung waits for every earlier rung to be done:
+// the easy and the medium quest of every subject (hard ones can wait), and the opening quest on rung 1.
+// The capstone waits for every other quest, hard ones included.
+function prerequisites(quest, quests) {
+  if (quest.id === CAPSTONE_ID) return quests.filter((q) => q.id !== CAPSTONE_ID);
+  return quests.filter((q) => q.rung < quest.rung && (q.id === OPENING_ID || q.tier === 'easy' || q.tier === 'medium'));
+}
+
+// The ids still to solve before this quest opens, in play order. Empty when it is open.
+export function missingFor(quest, solvedIds, quests = QUESTS) {
+  const solved = new Set(solvedIds);
+  return prerequisites(quest, quests)
+    .filter((q) => !solved.has(q.id))
+    .map((q) => q.id);
+}
+
+export const isQuestOpen = (quest, solvedIds, quests = QUESTS) => missingFor(quest, solvedIds, quests).length === 0;
+
+// A quest opens for a hero in a finished world once what it waits for is solved in this epoch.
 // Where the NPC stands and whether they are awake is not checked, so the Master can always recover.
 function requireQuestAccess(db, saveId, quest) {
   if (!getHero(db, saveId)) throw new Error('No hero yet. Create one first.');
   const status = worldStatus(db, saveId);
   if (!status.complete) throw new Error(`The world is not ready yet (missing: ${status.missing.join(', ')}).`);
-  const { solved } = getProgress(db, saveId);
-  const unsolved = QUESTS.slice(0, QUESTS.indexOf(quest))
-    .filter((q) => !solved.includes(q.id))
-    .map((q) => q.id);
-  if (unsolved.length) throw new Error(`Quest "${quest.id}" is not open yet. Solve first: ${unsolved.join(', ')}.`);
+  const missing = missingFor(quest, getProgress(db, saveId).solved);
+  if (missing.length) {
+    const shown = missing.slice(0, 5).join(', ');
+    const more = missing.length > 5 ? `, and ${missing.length - 5} more` : '';
+    throw new Error(`Quest "${quest.id}" is not open yet. Solve first: ${shown}${more}.`);
+  }
 }
 
 // With a database and a save the quest is gated. Tools that only want the stub can leave them out.
@@ -255,10 +275,19 @@ export function getProgress(db, saveId) {
       .all(saveId, epoch)
       .map((r) => r.quest_id),
   );
+  const solved = QUESTS.filter((q) => solvedIds.has(q.id)).map((q) => q.id);
+  const rungs = [];
+  for (let rung = 1; rung <= LADDER_RUNGS + 1; rung++) {
+    const inRung = QUESTS.filter((q) => q.rung === rung);
+    if (inRung.length)
+      rungs.push({ rung, solved: inRung.filter((q) => solvedIds.has(q.id)).length, total: inRung.length });
+  }
   return {
     epoch,
-    solved: QUESTS.filter((q) => solvedIds.has(q.id)).map((q) => q.id),
+    solved,
     remaining: QUESTS.filter((q) => !solvedIds.has(q.id)).map((q) => q.id),
+    open: QUESTS.filter((q) => !solvedIds.has(q.id) && isQuestOpen(q, solved)).map((q) => q.id),
+    rungs,
     total: QUESTS.length,
   };
 }

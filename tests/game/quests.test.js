@@ -184,7 +184,7 @@ test('a quest can be solved again after a reset and the old solve stays', () => 
   assert.deepEqual(getProgress(db, saveId).solved, ['dice-roll']);
 });
 
-test('getProgress lists solved and remaining in registry order', () => {
+test('getProgress lists solved, remaining, and open in registry order, with a summary per rung', () => {
   const { db, saveId, opts, put, judge } = setup();
   put('dice-roll');
   checkQuest(db, saveId, 'dice-roll', opts);
@@ -193,6 +193,8 @@ test('getProgress lists solved and remaining in registry order', () => {
     epoch: 0,
     solved: ['dice-roll'],
     remaining: ['string-shout', 'array-sum'],
+    open: ['string-shout', 'array-sum'],
+    rungs: [{ rung: 1, solved: 1, total: 3 }],
     total: 3,
   });
 });
@@ -287,27 +289,25 @@ test('quest start, check, and judge need a finished world', () => {
   assert.throws(() => judgeQuest(db, saveId, 'dice-roll', 'clean', null, { playerDir }), /not ready/i);
 });
 
-test('a quest opens only after every earlier quest is solved in this epoch', () => {
+test('the quests of rung 1 are open from the start, in any order', () => {
   const { db, saveId, playerDir, opts, put } = worldSave();
-  put('string-shout');
-  assert.throws(() => startQuest('string-shout', { playerDir, db, saveId }), /not open.*dice-roll/i);
-  assert.throws(() => checkQuest(db, saveId, 'string-shout', opts), /not open.*dice-roll/i);
-  assert.equal(count(db, 'quest_attempts'), 0);
-  assert.equal(startQuest('dice-roll', { playerDir, db, saveId }).questId, 'dice-roll');
-
-  markSolved(db, saveId, 'dice-roll');
-  assert.equal(checkQuest(db, saveId, 'string-shout', opts).status, 'pass');
   put('array-sum');
-  assert.throws(() => checkQuest(db, saveId, 'array-sum', opts), /not open.*string-shout/i);
+  assert.equal(startQuest('array-sum', { playerDir, db, saveId }).questId, 'array-sum');
+  assert.equal(checkQuest(db, saveId, 'array-sum', opts).status, 'pass');
+  put('string-shout');
+  assert.equal(checkQuest(db, saveId, 'string-shout', opts).status, 'pass');
+  assert.equal(getProgress(db, saveId).open.length, 3);
 });
 
-test('judging is refused when an earlier quest stopped counting after a reset', () => {
-  const { db, saveId, playerDir, opts, put } = worldSave();
+test('after a tamper reset the solves of the old epoch no longer count and every quest is open and unsolved again', () => {
+  const { db, saveId } = worldSave();
   markSolved(db, saveId, 'dice-roll');
-  put('string-shout');
-  checkQuest(db, saveId, 'string-shout', opts);
+  markSolved(db, saveId, 'string-shout');
+  assert.deepEqual(getProgress(db, saveId).solved, ['dice-roll', 'string-shout']);
   applyTamperReset(db, saveId, { expected: 'a', found: 'b' });
-  assert.throws(() => judgeQuest(db, saveId, 'string-shout', 'clean', null, { playerDir }), /not open.*dice-roll/i);
+  const progress = getProgress(db, saveId);
+  assert.deepEqual(progress.solved, []);
+  assert.deepEqual(progress.open, ['dice-roll', 'string-shout', 'array-sum']);
 });
 
 test('startQuest without a database still writes the stub, for tools that have no save', () => {

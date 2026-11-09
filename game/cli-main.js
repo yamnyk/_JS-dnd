@@ -72,7 +72,7 @@ const USAGE = `Commands:
   fight begin --npc <slot> --tier <weak|normal|tough> --aggressor <hero|npc> [--quest <id>]
   fight attack | fight flee | fight state
   move propose --data -   (problem JSON on stdin) | move check <moveId>
-  quest list | quest start <id> | quest check <id> | quest progress
+  quest list [all] | quest start <id> | quest check <id> | quest progress
   quest judge <id> <clean|cheated> ["<note>"]
   quest style <id> | quest style-decline <id>
   quest revoke <id> ["<note>"]
@@ -340,18 +340,24 @@ function main() {
     case 'quest': {
       const timeoutMs = process.env.JSDND_QUEST_TIMEOUT_MS ? Number(process.env.JSDND_QUEST_TIMEOUT_MS) : undefined;
       if (sub === 'list') {
-        arity(rest, 0, 0, 'quest list');
-        const { solved } = getProgress(db, currentSaveId());
+        arity(rest, 0, 1, 'quest list [all]');
+        if (rest.length && rest[0] !== 'all') throw new Error('Wrong argument. Expected: quest list [all]');
+        const { solved, open } = getProgress(db, currentSaveId());
+        // By default only what the hero can take now: open and unsolved. "all" lists every quest.
+        const shown = rest.length ? QUESTS : QUESTS.filter((q) => open.includes(q.id));
         out({
           ok: true,
-          quests: QUESTS.map((q) => ({
+          quests: shown.map((q) => ({
             id: q.id,
             title: questText(q.id, currentLang()).title,
+            subject: q.subject,
+            tier: q.tier,
             rung: q.rung,
             complexity: q.complexity,
             file: join(defaultPlayerDir(), `${q.id}.js`),
             solved: solved.includes(q.id),
           })),
+          progress: { solved: solved.length, total: QUESTS.length },
         });
       } else if (sub === 'start') {
         arity(rest, 1, 1, 'quest start <id>');

@@ -1342,3 +1342,34 @@ test('a collapsed hero cannot rest or name an item, but can still list items', (
   }
   assert.equal(game.run('item', 'list').status, 0);
 });
+
+test('quest list shows the open unsolved quests with subject and tier, and quest list all shows everything', () => {
+  const game = readyGame();
+  const fresh = game.run('quest', 'list').json;
+  assert.deepEqual(
+    fresh.quests.map((q) => [q.id, q.subject, q.tier]),
+    [
+      ['dice-roll', 'opening', null],
+      ['string-shout', 'strings', 'easy'],
+      ['array-sum', 'arrays', 'medium'],
+    ],
+  );
+  assert.deepEqual(fresh.progress, { solved: 0, total: 3 });
+  markSolved(game.db(), 1, 'dice-roll');
+  const after = game.run('quest', 'list').json;
+  assert.deepEqual(
+    after.quests.map((q) => q.id),
+    ['string-shout', 'array-sum'],
+  );
+  assert.deepEqual(after.progress, { solved: 1, total: 3 });
+  const all = game.run('quest', 'list', 'all').json;
+  assert.deepEqual(
+    all.quests.map((q) => [q.id, q.solved]),
+    [
+      ['dice-roll', true],
+      ['string-shout', false],
+      ['array-sum', false],
+    ],
+  );
+  assert.equal(game.run('quest', 'list', 'everything').status, 1);
+});
