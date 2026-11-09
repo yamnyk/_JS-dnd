@@ -25,6 +25,11 @@ export function rollDie(sides, rng = Math.random) {
   // твій код тут
 }
 `,
+      expected: [
+        '`rollDie(6, () => 0)` дає `1`',
+        '`rollDie(6, () => 0.999999)` дає `6`',
+        '`rollDie(20, () => 0.5)` дає `11`',
+      ],
       specific: [],
     },
     'string-shout': {
@@ -37,6 +42,11 @@ export function shout(text) {
   // твій код тут
 }
 `,
+      expected: [
+        "`shout('hello')` дає `'HELLO!'`",
+        "`shout('  hi there ')` дає `'HI THERE!'`",
+        "`shout('')` дає `'!'`",
+      ],
       specific: [],
     },
     'array-sum': {
@@ -50,6 +60,7 @@ export function sumEven(numbers) {
   // твій код тут
 }
 `,
+      expected: ['`sumEven([1, 2, 3, 4])` дає `6`', '`sumEven([])` дає `0`', '`sumEven([-2, 3])` дає `-2`'],
       specific: [],
     },
   },

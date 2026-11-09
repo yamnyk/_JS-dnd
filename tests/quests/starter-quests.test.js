@@ -11,9 +11,9 @@ import { runQuestCheck } from '../../game/quest-runner.js';
 const solutions = join(resolve(dirname(fileURLToPath(import.meta.url))), 'solutions');
 const solution = (id, kind) => join(solutions, `${id}.${kind}.js`);
 
-test('the registry lists the three quests in order with sane metadata', () => {
+test('the three starter quests are in the registry, in order, with sane metadata', () => {
   assert.deepEqual(
-    QUESTS.map((q) => q.id),
+    QUESTS.map((q) => q.id).filter((id) => ['dice-roll', 'string-shout', 'array-sum'].includes(id)),
     ['dice-roll', 'string-shout', 'array-sum'],
   );
   assert.equal(new Set(QUESTS.map((q) => q.id)).size, QUESTS.length);

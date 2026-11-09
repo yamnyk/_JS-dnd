@@ -25,6 +25,11 @@ export function rollDie(sides, rng = Math.random) {
   // your code here
 }
 `,
+      expected: [
+        '`rollDie(6, () => 0)` gives `1`',
+        '`rollDie(6, () => 0.999999)` gives `6`',
+        '`rollDie(20, () => 0.5)` gives `11`',
+      ],
       specific: [],
     },
     'string-shout': {
@@ -37,6 +42,11 @@ export function shout(text) {
   // your code here
 }
 `,
+      expected: [
+        "`shout('hello')` gives `'HELLO!'`",
+        "`shout('  hi there ')` gives `'HI THERE!'`",
+        "`shout('')` gives `'!'`",
+      ],
       specific: [],
     },
     'array-sum': {
@@ -50,6 +60,7 @@ export function sumEven(numbers) {
   // your code here
 }
 `,
+      expected: ['`sumEven([1, 2, 3, 4])` gives `6`', '`sumEven([])` gives `0`', '`sumEven([-2, 3])` gives `-2`'],
       specific: [],
     },
   },

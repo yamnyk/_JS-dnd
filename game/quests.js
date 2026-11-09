@@ -93,6 +93,7 @@ export function startQuest(questId, { playerDir = defaultPlayerDir(), db, saveId
     created,
     title: text.title,
     brief: text.brief,
+    expected: text.expected,
     style: { general: generalStyle(language), specific: text.specific },
   };
 }
