@@ -63,6 +63,21 @@ export const wrongArgCount = (call, gave) => ({
   got: part('check.argCount.got', { call, gave: show(gave) }),
 });
 
+// A call that should throw: wanted is the error type (a name), gave is the name of what was thrown, or
+// undefined when nothing was thrown.
+export const wrongThrow = (call, wanted, gave) => ({
+  pass: false,
+  expected: part('check.throws.expected', { call, wanted }),
+  got: gave === undefined ? part('check.noThrow.got', { call }) : part('check.throws.got', { call, gave }),
+});
+
+// A call that should give a value but threw.
+export const wrongThrown = (call, wanted, gave) => ({
+  pass: false,
+  expected: part('check.wrongResult.expected', { call, wanted }),
+  got: part('check.throws.got', { call, gave }),
+});
+
 export const outOfRange = (call, max, gave) => ({
   pass: false,
   expected: part('check.outOfRange.expected', { call, max: shown(max) }),

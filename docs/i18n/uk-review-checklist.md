@@ -12,7 +12,7 @@ Rules to hold the text to:
 ## `game/locales/uk.js`
 
 - [ ] `language.` : the language switch confirmation.
-- [ ] `check.` : what a quest check tells the player (timeouts, missing file, wrong result, passed). `{call}` and `{path}` stay as they are.
+- [ ] `check.` : what a quest check tells the player (timeouts, missing file, wrong result, passed, how often a function was called, threw or did not throw). `{call}` and `{path}` stay as they are.
 - [ ] `style.` : the code style problems, one line per ESLint rule.
 - [ ] `update.` : the message that asks the player to run `git pull` before a session, with its plural forms for the number of new commits.
 - [ ] `move.` : the starter file comments of a combat move.
