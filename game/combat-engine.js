@@ -13,6 +13,7 @@ import { BOSS_SLOT, endingStatus, bossBlocker } from './ending.js';
 import { QUESTS } from '../quests/index.js';
 import { syncHp, setHp, fullHeal } from './vitals.js';
 import { grantItem } from './inventory.js';
+import { needMapMessage } from './detours.js';
 
 // Re-exported so the fight engine stays the one place callers import fights from.
 export { openFight, getFightState };
@@ -67,7 +68,10 @@ const clearWarnings = (db, fight) =>
 function finishLoss(db, fight) {
   endFight(db, fight.id, 'lost');
   clearWarnings(db, fight);
-  db.prepare('UPDATE heroes SET location_slot = ? WHERE save_id = ?').run(SKELETON.start, fight.save_id);
+  db.prepare('UPDATE heroes SET location_slot = ?, detour_id = NULL WHERE save_id = ?').run(
+    SKELETON.start,
+    fight.save_id,
+  );
   // Waking at the start comes with full health.
   fullHeal(db, fight.save_id);
 }
@@ -90,6 +94,7 @@ export function beginFight(
     if (!hero) throw new Error('No hero yet. Create one first.');
     const status = worldStatus(db, saveId);
     if (!status.complete) throw new Error(`The world is not ready yet (missing: ${status.missing.join(', ')}).`);
+    if (hero.detourId !== null) throw new Error(needMapMessage('the real people cannot be fought'));
     const slot = String(npcSlot ?? '')
       .trim()
       .toUpperCase();

@@ -62,7 +62,9 @@ export function stateLine(db, saveId) {
   if (!hero || !here) return null;
   // The labels are English in every language: the Master reads this line, the player never does.
   const parts = [
-    `at ${here.location.name} (${here.location.slot})`,
+    here.detour
+      ? `at ${here.detour.name} (detour near ${here.location.slot})`
+      : `at ${here.location.name} (${here.location.slot})`,
     `HP ${vitals.hp}/${vitals.maxHp}`,
     `${vitals.gold} gold`,
     // The rung to play, or why there is nothing to play: the road is unfinished, or everything is solved.

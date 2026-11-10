@@ -1378,3 +1378,74 @@ test('quest list shows the open unsolved quests with subject and tier, and quest
   );
   assert.equal(game.run('quest', 'list', 'everything').status, 1);
 });
+
+// ---- detours: places the Master invents on the go
+test('detour enter makes a place, look shows it, detour show and list tell about it, and detour leave goes back', () => {
+  const game = readyGame();
+  const entered = game.run('detour', 'enter', 'The Whispering Forest', "Tall pines and the smith's smoke.");
+  assert.equal(entered.status, 0, entered.stderr);
+  assert.equal(entered.json.created, true);
+  assert.equal(entered.json.detour.name, 'The Whispering Forest');
+  assert.equal(game.run('look').json.detour.name, 'The Whispering Forest');
+  assert.deepEqual(game.run('look').json.npcs, []);
+  const shown = game.run('detour', 'show').json;
+  assert.equal(shown.detour.name, 'The Whispering Forest');
+  assert.equal(game.run('detour', 'list').json.detours.length, 1);
+  const left = game.run('detour', 'leave');
+  assert.equal(left.status, 0, left.stderr);
+  assert.equal(left.json.detour, null);
+  assert.equal(game.run('look').json.detour, null);
+  assert.equal(game.run('detour', 'show').json.detour, null);
+  const again = game.run('detour', 'enter', 'the whispering forest');
+  assert.equal(again.json.created, false);
+});
+
+test('go from a detour always works, and a real person is refused with a message that says what to do', () => {
+  const game = readyGame();
+  game.run('detour', 'enter', 'The Forest', 'Pines.');
+  const talk = game.run('talk', 'N1');
+  assert.equal(talk.status, 1);
+  assert.match(JSON.parse(talk.stderr.trim()).error, /detour leave/);
+  const moved = game.run('go', 'L2');
+  assert.equal(moved.status, 0, moved.stderr);
+  assert.equal(game.run('look').json.detour, null);
+});
+
+test('detour commands check their arguments and report bad names as errors, not crashes', () => {
+  const game = readyGame();
+  assert.equal(game.run('detour').status, 1);
+  assert.equal(game.run('detour', 'enter').status, 1);
+  assert.equal(game.run('detour', 'enter', 'The Forest').status, 1, 'a new place needs a description');
+  assert.equal(game.run('detour', 'enter', 'L2', 'Pines.').status, 1);
+  assert.equal(game.run('detour', 'enter', 'A', 'B', 'C').status, 1);
+  assert.equal(game.run('detour', 'leave').status, 1);
+  assert.equal(game.run('detour', 'leave', 'extra').status, 1);
+  assert.equal(game.run('detour', 'list', 'extra').status, 1);
+  assert.equal(game.run('detour', 'dance').status, 1);
+});
+
+test('a collapsed hero cannot enter or leave a detour, but can still read them', () => {
+  const game = readyGame();
+  game.run('detour', 'enter', 'The Forest', 'Pines.');
+  setReading(game, 99, 100);
+  for (const args of [
+    ['detour', 'enter', 'The Cave', 'Dark.'],
+    ['detour', 'leave'],
+  ]) {
+    const result = game.run(...args);
+    assert.equal(result.status, 1, args.join(' '));
+    assert.equal(JSON.parse(result.stderr.trim()).collapsed, true, args.join(' '));
+  }
+  assert.equal(game.run('detour', 'show').status, 0);
+  assert.equal(game.run('detour', 'list').status, 0);
+});
+
+test('hero show, resume, and the usage text all know about detours', () => {
+  const game = readyGame();
+  game.run('detour', 'enter', 'The Forest', 'Pines.');
+  const resume = game.run('resume').json;
+  assert.equal(resume.here.detour.name, 'The Forest');
+  const usage = game.run().stderr;
+  assert.match(usage, /detour enter/);
+  assert.match(usage, /detour leave/);
+});

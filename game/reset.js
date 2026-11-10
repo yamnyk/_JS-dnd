@@ -28,7 +28,8 @@ export function applyTamperReset(db, saveId, { expected, found }) {
       new Date().toISOString(),
       saveId,
     );
-    db.prepare('UPDATE heroes SET level = 1 WHERE id = ?').run(hero.id);
+    // The invented places stay, but the hero starts again on the map.
+    db.prepare('UPDATE heroes SET level = 1, detour_id = NULL WHERE id = ?').run(hero.id);
     // Race bonuses (trait_adjust) belong to the hero's race and survive the fall. Everything else starts over.
     db.prepare('UPDATE hero_abilities SET base = 8 WHERE hero_id = ?').run(hero.id);
     // Full health at the new, lower maximum.

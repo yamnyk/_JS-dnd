@@ -52,6 +52,7 @@ import {
 } from './i18n.js';
 import { buildEnding } from './ending.js';
 import { readVitals, restHero } from './vitals.js';
+import { enterDetour, leaveDetour, currentDetour, listDetours } from './detours.js';
 import { listItems, countItems, nameItem } from './inventory.js';
 import { resumeState } from './resume.js';
 
@@ -65,6 +66,7 @@ const USAGE = `Commands:
   world skeleton | world status | world show
   world fill --data '<json>'   (or --data - to read the JSON from stdin, safe for apostrophes)
   look | go <exit> | talk <npcSlot> | voice lint "<text>"
+  detour enter "<name>" ["<description>"] | detour leave | detour show | detour list
   roll <spec> [--context "<text>"]
   honor add <delta> <kind> "<reason>" | honor event <kind> ["<note>"] | honor show
   fight start "<reason>" | fight log <fightId> <actor> <action> ["<detail>"] [--roll <rollId>]
@@ -89,6 +91,8 @@ const BLOCKED_WHEN_COLLAPSED = new Set([
   'go',
   'talk',
   'roll',
+  'detour enter',
+  'detour leave',
   'honor add',
   'honor event',
   'fight start',
@@ -620,6 +624,22 @@ function main() {
     case 'talk': {
       arity(positionals.slice(1), 1, 1, 'talk <npcSlot>');
       out({ ok: true, ...talk(db, currentSaveId(), sub) });
+      break;
+    }
+    case 'detour': {
+      if (sub === 'enter') {
+        arity(rest, 1, 2, 'detour enter "<name>" ["<description>"]');
+        out({ ok: true, ...enterDetour(db, currentSaveId(), { name: rest[0], description: rest[1] }) });
+      } else if (sub === 'leave') {
+        arity(rest, 0, 0, 'detour leave');
+        out({ ok: true, ...leaveDetour(db, currentSaveId()) });
+      } else if (sub === 'show') {
+        arity(rest, 0, 0, 'detour show');
+        out({ ok: true, detour: currentDetour(db, currentSaveId()) });
+      } else if (sub === 'list') {
+        arity(rest, 0, 0, 'detour list');
+        out({ ok: true, detours: listDetours(db, currentSaveId()) });
+      } else fail(USAGE);
       break;
     }
     case 'voice': {

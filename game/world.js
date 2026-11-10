@@ -7,6 +7,7 @@ import { effectiveLanguage } from './i18n.js';
 import { worldStatus } from './world-status.js';
 import { SKELETON } from '../world/skeleton.js';
 import { QUESTS } from '../quests/index.js';
+import { currentDetour, clearDetour, needMapMessage } from './detours.js';
 import { questText } from '../quests/text/index.js';
 
 const SOURCES = ['offered', 'customized', 'written'];
@@ -154,15 +155,20 @@ export function look(db, saveId) {
   const hero = requireReady(db, saveId);
   const here = skeletonLocation(hero.locationSlot);
   const npcNames = db.prepare('SELECT slot, name FROM world_npcs WHERE save_id = ?').all(saveId);
+  const detour = currentDetour(db, saveId);
   return {
     location: locationRow(db, saveId, here.slot),
+    // Off the map the real people are out of reach: they stand at the map place, not in the detour.
+    detour: detour && { name: detour.name, description: detour.description, parent: detour.parent },
     exits: here.exits.map((slot) => {
       const row = locationRow(db, saveId, slot);
       return { slot, name: row.name };
     }),
-    npcs: SKELETON.npcs
-      .filter((n) => n.location === here.slot)
-      .map((n) => ({ slot: n.slot, name: npcNames.find((r) => r.slot === n.slot).name })),
+    npcs: detour
+      ? []
+      : SKELETON.npcs
+          .filter((n) => n.location === here.slot)
+          .map((n) => ({ slot: n.slot, name: npcNames.find((r) => r.slot === n.slot).name })),
   };
 }
 
@@ -182,6 +188,8 @@ export function go(db, saveId, target) {
     );
   }
   db.prepare('UPDATE heroes SET location_slot = ? WHERE save_id = ?').run(destination.slot, saveId);
+  // Walking on from a detour, at any depth, leaves all of them.
+  clearDetour(db, saveId);
   return { location: { slot: destination.slot, name: destination.name } };
 }
 
@@ -189,6 +197,7 @@ export function go(db, saveId, target) {
 // only tests pass another one, to stand in for a complete ladder.
 export function talk(db, saveId, npcSlot, { quests = QUESTS } = {}) {
   const hero = requireReady(db, saveId);
+  if (hero.detourId !== null) throw new Error(needMapMessage('the real people are out of reach'));
   const spot = SKELETON.npcs.find(
     (n) =>
       n.slot ===

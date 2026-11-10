@@ -3,6 +3,7 @@ import { t } from './i18n.js';
 import { colorForLeft, paint } from './stamina.js';
 import { readVitals } from './vitals.js';
 import { countItems } from './inventory.js';
+import { currentDetour } from './detours.js';
 
 const whole = (value) => (Number.isFinite(value) ? Math.round(value) : 0);
 
@@ -39,6 +40,6 @@ export function heroLineInfo(db, saveId, nowMs = Date.now()) {
     maxHp: vitals.maxHp,
     gold: vitals.gold,
     items: countItems(db, saveId),
-    location: place?.name ?? hero.locationSlot ?? '',
+    location: currentDetour(db, saveId)?.name ?? place?.name ?? hero.locationSlot ?? '',
   };
 }

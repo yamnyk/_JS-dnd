@@ -2,6 +2,7 @@ import { inTransaction } from './db.js';
 import { getHero } from './hero.js';
 import { maxHpFor } from './hero-stats.js';
 import { SKELETON } from '../world/skeleton.js';
+import { needMapMessage } from './detours.js';
 
 // The hero's health and gold. Health is stored as a number once the hero is first hurt, and a null
 // means full. It comes back by itself, one point per REGEN_MS of real time, except in an open fight.
@@ -105,6 +106,7 @@ export function restHero(db, saveId, nowMs = Date.now()) {
   return inTransaction(db, () => {
     const { hero } = requireHero(db, saveId);
     if (fightOpen(db, saveId)) throw new Error('The hero cannot rest in the middle of a fight.');
+    if (hero.detourId !== null) throw new Error(needMapMessage('there is no bed to rest in'));
     if (hero.locationSlot !== SKELETON.start) {
       throw new Error(`The hero can only rest at the start (${SKELETON.start}).`);
     }

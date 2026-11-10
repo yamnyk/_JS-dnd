@@ -104,6 +104,7 @@ export function getHero(db, saveId) {
     raceDescription: row.race_description,
     classDescription: row.class_description,
     locationSlot: row.location_slot,
+    detourId: row.detour_id ?? null,
     abilities: Object.fromEntries(ABILITIES.map((a) => [a, byName[a]])),
   };
 }
