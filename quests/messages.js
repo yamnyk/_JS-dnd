@@ -57,9 +57,10 @@ export const wrongCallCount = (call, wanted, gave) => ({
   got: part('check.callCount.got', { call, gave: show(gave) }),
 });
 
-export const wrongArgCount = (call, gave) => ({
+// `wanted` is how many arguments every call should have (1 unless said otherwise).
+export const wrongArgCount = (call, gave, wanted = 1) => ({
   pass: false,
-  expected: part('check.argCount.expected', { call }),
+  expected: part('check.argCount.expected', { call, count: wanted }),
   got: part('check.argCount.got', { call, gave: show(gave) }),
 });
 
@@ -69,6 +70,13 @@ export const wrongThrow = (call, wanted, gave) => ({
   pass: false,
   expected: part('check.throws.expected', { call, wanted }),
   got: gave === undefined ? part('check.noThrow.got', { call }) : part('check.throws.got', { call, gave }),
+});
+
+// A call that should not throw at all but did.
+export const wrongThrewUnexpectedly = (call, gave) => ({
+  pass: false,
+  expected: part('check.mustNotThrow.expected', { call }),
+  got: part('check.throws.got', { call, gave }),
 });
 
 // A call that should give a value but threw.

@@ -196,3 +196,11 @@ Legend for status: **open** means still true in the code, **fixed** means a late
   - Raw errors without the input for the cases the briefs name: `titleCase` without an empty-text guard (`word[0].toUpperCase()`), `parseQuery` pushing onto `constructor`. Same "no try/catch around the player's call" pattern as rungs 1 and 2, and the error text is English in a Ukrainian game.
   - Forbidding `forEach`, `reduce`, `some`, `every`, `find` in `myMap` and `myFilter` goes beyond the catalog (`.map` and `.filter` only). It is stated in the brief and stub, so it is a design choice.
   - The drafter's Ukrainian terms "хибне значення (falsy)" and "істинне значення (truthy)" are not in the glossary.
+
+## Found by the review of rung 4 of the curriculum, 2026-11-10
+
+- Fixed (Important): the argument count message always said "exactly 1 argument", so `errors-retry` (which wants none) told a player who passed `fn` an argument that one was expected. `wrongArgCount` now takes the wanted count, with a plural entry in both catalogs.
+- Fixed (Minor): a copy of the fallback in `errors-safe-parse` printed two equal lines (it now says `=== fallback`); the timeouts quests showed a raw word `ok` as the wanted value (new `wrongThrewUnexpectedly` helper and a catalog key); the briefs now say to call the global `setTimeout` and explain the `#` number in failure messages; rung 4 is pinned with the real registry like rungs 2 and 3.
+- Deferred minors:
+  - `import { setTimeout } from 'node:timers'`, a module level `const schedule = setTimeout`, and an `async` solution that waits on a promise are not reached by the mock clock, so such a valid solution fails. The brief now tells players to call the global `setTimeout`.
+  - `safeParse` that calls `json.trim()` first fails the trap cases with a raw error. The brief says only the trap objects are not texts.

@@ -1,5 +1,13 @@
 import { mock } from 'node:test';
-import { missingExport, wrongResult, passed, show, wrongCallCount, wrongThrown } from './messages.js';
+import {
+  missingExport,
+  wrongResult,
+  passed,
+  show,
+  wrongCallCount,
+  wrongThrown,
+  wrongThrewUnexpectedly,
+} from './messages.js';
 
 // Time is simulated: the check turns on the mock clock, calls callLater, and moves the clock with tick.
 // Nothing waits for real, and the clock is always reset before the check returns.
@@ -78,7 +86,7 @@ function runScenario(mod, steps) {
         try {
           mod.callLater(spy.fn, ms);
         } catch (error) {
-          return wrongThrown(written.join('; '), 'ok', errorName(error));
+          return wrongThrewUnexpectedly(written.join('; '), errorName(error));
         }
       } else {
         written.push(`tick(${name})`);
@@ -86,7 +94,7 @@ function runScenario(mod, steps) {
         try {
           mock.timers.tick(name);
         } catch (error) {
-          return wrongThrown(written.join('; '), 'ok', errorName(error));
+          return wrongThrewUnexpectedly(written.join('; '), errorName(error));
         }
       }
       for (const [timerName, spy] of timers) {

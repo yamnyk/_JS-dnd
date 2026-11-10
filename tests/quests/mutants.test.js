@@ -206,3 +206,74 @@ test('plain loops, recursion, and entries() still pass after the prototype traps
   for (const [id, code] of valid) assert.equal(run(id, code).status, 'pass', code);
   assert.ok(Array.prototype.map.toString().includes('[native code]'));
 });
+
+// ---- rung 4 review: a verdict must not contradict itself, and the briefs must say what the check enforces
+test('a retry that gives fn an argument is told fn takes none, not exactly one', () => {
+  const code = `export function retry(fn, attempts) {
+  let last;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return fn(i);
+    } catch (error) {
+      last = error;
+    }
+  }
+  throw last;
+}`;
+  const english = runIn('errors-retry', code, 'en');
+  assert.equal(english.status, 'fail');
+  assert.match(english.expected, /exactly 0 arguments/);
+  assert.doesNotMatch(english.expected, /exactly 1 argument/);
+  const ukrainian = runIn('errors-retry', code, 'uk');
+  assert.match(ukrainian.expected, /рівно 0 аргументів/);
+});
+
+test('an applyN that gives fn two arguments is still told exactly 1 argument, with the singular word', () => {
+  const english = runIn('functions-apply-n', TWO_ARGUMENTS, 'en');
+  assert.match(english.expected, /exactly 1 argument$/);
+  const ukrainian = runIn('functions-apply-n', TWO_ARGUMENTS, 'uk');
+  assert.match(ukrainian.expected, /рівно 1 аргумент$/);
+});
+
+test('a safeParse that returns a copy of the fallback is told it must be the same object, not shown two equal lines', () => {
+  const code = `export function safeParse(json, fallback) {
+  try {
+    return JSON.parse(json);
+  } catch (error) {
+    if (!(error instanceof SyntaxError)) throw error;
+    return typeof fallback === 'object' && fallback !== null ? JSON.parse(JSON.stringify(fallback)) : fallback;
+  }
+}`;
+  const result = run('errors-safe-parse', code);
+  assert.equal(result.status, 'fail');
+  assert.notEqual(result.got, result.expected);
+  assert.match(result.expected, /=== fallback/);
+});
+
+test('a timeouts solution that throws is told no error was expected, not that ok was expected', () => {
+  const english = runIn('timeouts-call-later', "export function callLater() { throw new TypeError('x'); }", 'en');
+  assert.equal(english.status, 'fail');
+  assert.doesNotMatch(english.expected, / ok$/);
+  assert.match(english.expected, /does not throw/);
+  assert.match(english.got, /threw TypeError/);
+  const ukrainian = runIn('timeouts-call-later', "export function callLater() { throw new TypeError('x'); }", 'uk');
+  assert.match(ukrainian.expected, /не кидає помилку/);
+});
+
+test('the briefs of the three timeouts quests say to call the global setTimeout, in both languages', async () => {
+  const { questText } = await import('../../quests/text/index.js');
+  for (const id of ['timeouts-call-later', 'timeouts-cancellable', 'timeouts-debounce']) {
+    assert.match(questText(id, 'en').brief, /global `setTimeout`/, id);
+    assert.match(questText(id, 'uk').brief, /глобальний `setTimeout`/, id);
+  }
+});
+
+test('the briefs of retry and safeParse explain that a number after # marks the error object', async () => {
+  const { questText } = await import('../../quests/text/index.js');
+  for (const id of ['errors-retry', 'errors-safe-parse']) {
+    assert.match(questText(id, 'en').brief, /number after `#`/, id);
+    assert.match(questText(id, 'en').brief, /very same object/, id);
+    assert.match(questText(id, 'uk').brief, /число після `#`/, id);
+    assert.match(questText(id, 'uk').brief, /той самий обʼєкт/, id);
+  }
+});

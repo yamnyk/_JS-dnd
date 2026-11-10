@@ -136,3 +136,21 @@ test('with the real registry rung 3 opens only after the easy and medium of rung
   const missingOne = both.filter((id) => id !== 'functions-apply-n');
   for (const quest of rung3) assert.equal(isQuestOpen(quest, missingOne), false, quest.id);
 });
+
+test('with the real registry rung 4 opens only after the easy and medium of rungs 1 to 3, and N4 owns it', async () => {
+  const { QUESTS } = await import('../../quests/index.js');
+  const { SKELETON } = await import('../../world/skeleton.js');
+  const easyMedium = (rung) =>
+    QUESTS.filter((q) => q.rung === rung && (q.id === OPENING_ID || q.tier === 'easy' || q.tier === 'medium')).map(
+      (q) => q.id,
+    );
+  const rung4 = QUESTS.filter((q) => q.rung === 4);
+  assert.equal(rung4.length, 6);
+  assert.equal(SKELETON.npcs.find((n) => n.slot === 'N4').rung, 4);
+  const earlier = [...easyMedium(1), ...easyMedium(2)];
+  for (const quest of rung4) assert.equal(isQuestOpen(quest, earlier), false, quest.id);
+  const all = [...earlier, ...easyMedium(3)];
+  for (const quest of rung4) assert.equal(isQuestOpen(quest, all), true, quest.id);
+  const missingOne = all.filter((id) => id !== 'closures-once');
+  for (const quest of rung4) assert.equal(isQuestOpen(quest, missingOne), false, quest.id);
+});

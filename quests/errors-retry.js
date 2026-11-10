@@ -145,7 +145,7 @@ export default {
       const result = attempt(() => mod.retry(spy.fn, attempts));
       if (spy.calls !== wantedCalls) return wrongCallCount(call, wantedCalls, spy.calls);
       const withArguments = spy.argCounts.find((count) => count !== 0);
-      if (withArguments !== undefined) return wrongArgCount(call, withArguments);
+      if (withArguments !== undefined) return wrongArgCount(call, withArguments, 0);
       if (succeeds) {
         if (result.threw) return wrongThrown(call, show(value), describe(result.error));
         if (!Object.is(result.value, value)) return wrongResult(call, show(value), show(result.value));

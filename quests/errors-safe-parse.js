@@ -165,7 +165,13 @@ export default {
       const same = wanted.usedFallback
         ? Object.is(result.value, fallback)
         : isDeepStrictEqual(result.value, wanted.value);
-      if (!same) return wrongResult(call, show(wanted.value), show(result.value));
+      if (!same) {
+        // A copy of the fallback looks the same when printed, so say what is wrong in code.
+        if (wanted.usedFallback && isDeepStrictEqual(result.value, fallback)) {
+          return wrongResult(`safeParse(${show(json)}, fallback) === fallback`, 'true', 'false');
+        }
+        return wrongResult(call, show(wanted.value), show(result.value));
+      }
     }
     for (const [index, { source, Type, make }] of TRAPS.entries()) {
       const fallback = TRAP_FALLBACKS[index];
