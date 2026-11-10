@@ -1,38 +1,6 @@
 import { isDeepStrictEqual } from 'node:util';
 import { missingExport, wrongResult, wrongCallCount, passed, show } from './messages.js';
-
-// The built-in array methods that would do the job. The player's function gets a copy of the array on which
-// each of them throws, so a solution that leans on one fails and says which.
-const OFF_LIMITS = [
-  'map',
-  'filter',
-  'forEach',
-  'reduce',
-  'reduceRight',
-  'flatMap',
-  'some',
-  'every',
-  'find',
-  'findIndex',
-  'findLast',
-  'findLastIndex',
-];
-
-function guardedCopy(input, used) {
-  const copy = [...input];
-  for (const name of OFF_LIMITS) {
-    Object.defineProperty(copy, name, {
-      value() {
-        used.push(name);
-        throw new Error(`items.${name}`);
-      },
-      configurable: true,
-      writable: true,
-      enumerable: false,
-    });
-  }
-  return copy;
-}
+import { guardedCopy, withTraps } from './off-limits.js';
 
 // Small functions the check hands over. `source` is how the call is shown in a failure message.
 const DOUBLE = { source: '(x) => x * 2', run: (x) => x * 2 };
@@ -103,7 +71,7 @@ export default {
       };
       let gave;
       try {
-        gave = mod.myMap(items, spy);
+        gave = withTraps(used, () => mod.myMap(items, spy));
       } catch (error) {
         if (used.length === 0) throw error;
       }

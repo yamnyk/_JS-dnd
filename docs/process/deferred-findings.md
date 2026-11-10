@@ -185,3 +185,14 @@ Legend for status: **open** means still true in the code, **fixed** means a late
   - The Ukrainian rung 2 entries are in a different key order from the English ones. Cosmetic.
   - A solution using `times ?? 1` instead of a default parameter passes `functions-apply-n`. No check can see it, and the style line hands it to the Master's judgment.
   - Lowercase `'pt'` and a truthy `express` are never tested, so lenient solutions pass. The brief says exactly `'PT'`.
+
+## Found by the review of rung 3 of the curriculum, 2026-11-10
+
+- Fixed (Important): `callbacks-my-map` and `callbacks-my-filter` only trapped the built-ins on the array handed to the player, so `[...items].map(fn)`, `items.slice().map(...)` and `Array.prototype.map.call(items, fn)` passed. The traps now also sit on `Array.prototype` while the player's function runs (`quests/off-limits.js`), restored afterwards. The brief says so.
+- Fixed (Minor): the N3 handout and the rung 3 gate are now pinned with the real registry; `show()` prints a Map and a Set instead of `{}`; the committed `tests/.DS_Store` is untracked.
+- Decision: the extra strictness of `closures-memoize` (1 versus '1', texts holding separators) stays. The reviewer judged it fair for a hard quest and clearly stated in the brief.
+- Deferred minors:
+  - `Array.from(items, fn)` still passes `callbacks-my-map`, since it never calls the trapped methods. The Master's reading of the file covers it.
+  - Raw errors without the input for the cases the briefs name: `titleCase` without an empty-text guard (`word[0].toUpperCase()`), `parseQuery` pushing onto `constructor`. Same "no try/catch around the player's call" pattern as rungs 1 and 2, and the error text is English in a Ukrainian game.
+  - Forbidding `forEach`, `reduce`, `some`, `every`, `find` in `myMap` and `myFilter` goes beyond the catalog (`.map` and `.filter` only). It is stated in the brief and stub, so it is a design choice.
+  - The drafter's Ukrainian terms "хибне значення (falsy)" and "істинне значення (truthy)" are not in the glossary.

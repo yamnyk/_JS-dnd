@@ -41,6 +41,7 @@ export const playerFacing = [
   'quests/functions-clamp.js',
   'quests/functions-apply-n.js',
   'quests/functions-compose.js',
+  'quests/off-limits.js',
   'quests/callbacks-times.js',
   'quests/callbacks-my-map.js',
   'quests/callbacks-my-filter.js',

@@ -24,6 +24,11 @@ export function show(value, seen = new Set()) {
   if (value === null || typeof value !== 'object') return String(value);
   if (seen.has(value)) return '...';
   const inside = new Set(seen).add(value);
+  if (value instanceof Map) {
+    const pairs = [...value].map(([k, v]) => `${show(k, inside)} => ${show(v, inside)}`);
+    return `Map {${pairs.join(', ')}}`;
+  }
+  if (value instanceof Set) return `Set {${[...value].map((v) => show(v, inside)).join(', ')}}`;
   if (Array.isArray(value)) return `[${value.map((item) => show(item, inside)).join(',')}]`;
   return `{${Object.entries(value)
     .map(([key, item]) => `${JSON.stringify(key)}:${show(item, inside)}`)

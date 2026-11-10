@@ -53,6 +53,12 @@ test('the show helper prints undefined, NaN, and negative zero as themselves, an
   );
 });
 
+test('the show helper prints a Map and a Set so a wrong type is visible', () => {
+  assert.equal(show(new Map([['a', 1]])), 'Map {"a" => 1}');
+  assert.equal(show(new Set([1, 'b'])), 'Set {1, "b"}');
+  assert.equal(show(new Map()), 'Map {}');
+});
+
 test('the show helper survives a circular structure instead of looping', () => {
   const loop = { name: 'loop' };
   loop.self = loop;
@@ -144,4 +150,59 @@ test('a collatz that returns the steps as text is shown quoted, so the player ca
   assert.equal(result.status, 'fail');
   assert.notEqual(result.got, result.expected);
   assert.match(result.got, /gave "/);
+});
+
+// The off-limits built-ins are trapped on Array.prototype for the duration of the player's call, so copying
+// the array first does not get around the rule.
+const COPYING_MAP = [
+  'export function myMap(items, fn) { return [...items].map(fn); }',
+  'export function myMap(items, fn) { return items.slice().map((x, i) => fn(x, i)); }',
+  'export function myMap(items, fn) { return Array.prototype.map.call(items, fn); }',
+  'export function myMap(items, fn) { const out = []; [...items].forEach((x, i) => out.push(fn(x, i))); return out; }',
+];
+const COPYING_FILTER = [
+  'export function myFilter(items, fn) { return [...items].filter(fn); }',
+  'export function myFilter(items, fn) { return Array.from(items).filter((x, i) => fn(x, i)); }',
+  'export function myFilter(items, fn) { return Array.prototype.filter.call(items, fn); }',
+];
+
+test('myMap that copies the array before calling a built-in still fails, on every run', () => {
+  for (const code of COPYING_MAP) {
+    for (let i = 0; i < 4; i++) {
+      const result = run('callbacks-my-map', code);
+      assert.equal(result.status, 'fail', code);
+      assert.match(result.got, /items\.(map|forEach)\(\)/, code);
+    }
+  }
+});
+
+test('myFilter that copies the array before calling a built-in still fails, on every run', () => {
+  for (const code of COPYING_FILTER) {
+    for (let i = 0; i < 4; i++) {
+      assert.equal(run('callbacks-my-filter', code).status, 'fail', code);
+    }
+  }
+});
+
+test('plain loops, recursion, and entries() still pass after the prototype traps, and the prototype is left as it was', () => {
+  const valid = [
+    [
+      'callbacks-my-map',
+      'export function myMap(items, fn) { const out = []; for (let i = 0; i < items.length; i++) out.push(fn(items[i], i)); return out; }',
+    ],
+    [
+      'callbacks-my-map',
+      'export function myMap(items, fn) { const out = []; for (const [i, x] of items.entries()) out[i] = fn(x, i); return out; }',
+    ],
+    [
+      'callbacks-my-map',
+      'export function myMap(items, fn, i = 0) { return i >= items.length ? [] : [fn(items[i], i), ...myMap(items, fn, i + 1)]; }',
+    ],
+    [
+      'callbacks-my-filter',
+      'export function myFilter(items, fn) { const out = []; let i = 0; while (i < items.length) { if (fn(items[i], i)) out.push(items[i]); i++; } return out; }',
+    ],
+  ];
+  for (const [id, code] of valid) assert.equal(run(id, code).status, 'pass', code);
+  assert.ok(Array.prototype.map.toString().includes('[native code]'));
 });
