@@ -298,4 +298,72 @@ CREATE TABLE play_sessions (
 ALTER TABLE play_sessions ADD COLUMN update_checked_at TEXT;
 `,
   },
+  {
+    // Invented content. The hero keeps a real map place and gets a detour_id while off the map. Detours,
+    // invented people, side tasks, and a ledger of rewards the Master granted. inventory_items is rebuilt
+    // because SQLite cannot widen a CHECK: the same rows, one more allowed source ('reward').
+    version: 16,
+    sql: `
+ALTER TABLE heroes ADD COLUMN detour_id INTEGER;
+CREATE TABLE detours (
+  id INTEGER PRIMARY KEY,
+  save_id INTEGER NOT NULL REFERENCES saves (id),
+  parent_id INTEGER REFERENCES detours (id),
+  base_slot TEXT NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE UNIQUE INDEX detours_name ON detours (save_id, lower(name));
+CREATE TABLE improv_npcs (
+  id INTEGER PRIMARY KEY,
+  save_id INTEGER NOT NULL REFERENCES saves (id),
+  base_slot TEXT NOT NULL,
+  detour_id INTEGER REFERENCES detours (id),
+  name TEXT NOT NULL,
+  description TEXT NOT NULL,
+  voice TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE UNIQUE INDEX improv_npcs_name ON improv_npcs (save_id, lower(name));
+CREATE TABLE side_tasks (
+  id INTEGER PRIMARY KEY,
+  save_id INTEGER NOT NULL REFERENCES saves (id),
+  detour_id INTEGER REFERENCES detours (id),
+  npc_id INTEGER REFERENCES improv_npcs (id),
+  kind TEXT NOT NULL CHECK (kind IN ('story', 'js')),
+  title TEXT NOT NULL,
+  brief TEXT NOT NULL,
+  difficulty INTEGER,
+  tests TEXT,
+  status TEXT NOT NULL CHECK (status IN ('open', 'done', 'failed', 'dropped')),
+  created_at TEXT NOT NULL,
+  closed_at TEXT
+);
+CREATE TABLE rewards (
+  id INTEGER PRIMARY KEY,
+  save_id INTEGER NOT NULL REFERENCES saves (id),
+  kind TEXT NOT NULL CHECK (kind IN ('gold', 'item')),
+  amount INTEGER,
+  item_name TEXT,
+  reason TEXT NOT NULL,
+  side_task_id INTEGER REFERENCES side_tasks (id),
+  created_at TEXT NOT NULL
+);
+CREATE TABLE inventory_items_new (
+  id INTEGER PRIMARY KEY,
+  save_id INTEGER NOT NULL REFERENCES saves (id),
+  name TEXT,
+  source TEXT NOT NULL CHECK (source IN ('quest', 'fight', 'reward')),
+  quest_id TEXT,
+  fight_id INTEGER REFERENCES fights (id),
+  created_at TEXT NOT NULL,
+  revoked_at TEXT
+);
+INSERT INTO inventory_items_new (id, save_id, name, source, quest_id, fight_id, created_at, revoked_at)
+  SELECT id, save_id, name, source, quest_id, fight_id, created_at, revoked_at FROM inventory_items;
+DROP TABLE inventory_items;
+ALTER TABLE inventory_items_new RENAME TO inventory_items;
+`,
+  },
 ];
