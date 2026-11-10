@@ -672,5 +672,135 @@ export function memoize(fn) {
         'Keep the memory in a variable inside memoize. Not on fn, and not in a variable outside the function.',
       ],
     },
+    'errors-safe-parse': {
+      title: 'Parse it safely',
+      brief:
+        "Write a function safeParse(json, fallback). It takes a text json and a value fallback. When json is valid JSON, safeParse returns the value the text describes. When json is not valid JSON, safeParse returns fallback itself, the same value and not a copy. fallback can be any value, including undefined, null, 0, an empty text, and false. Valid JSON that describes a falsy value is still valid JSON: the texts '0', 'false', 'null', and '\"\"' give 0, false, null, and an empty text, and fallback is not used for them. Spaces around valid JSON are fine ('  7  ' gives 7). An empty text and a text with only spaces are not valid JSON. Only the error that says the text is not valid JSON may be replaced by fallback. If reading json itself throws some other error (for example json is an object whose conversion to text throws a RangeError), that error is not a parse error: it must come out of safeParse unchanged, the very same error object, and fallback must not be returned. The check hands over such an object a few times, with different error types. In every other test json is a text.",
+      stub: `// Quest: parse it safely.
+// Export safeParse(json, fallback): return the parsed value, or fallback when json is not valid JSON.
+// Only the parse error is replaced by fallback. Any other error must come out unchanged.
+export function safeParse(json, fallback) {
+  // your code here
+}
+`,
+      expected: [
+        '`safeParse(\'{"a":1}\', 0)` gives `{ a: 1 }`',
+        "`safeParse('nope', 'F')` gives `'F'`",
+        "`safeParse('null', 'F')` gives `null`",
+        "`safeParse('0', 'F')` gives `0`",
+      ],
+      specific: [
+        'Only swallow the parse error, not everything: check what the caught error is, and throw it again when it is not a parse error.',
+        'A parsed value can be falsy (0, false, null, an empty text). Do not decide with a truthiness test on the result.',
+      ],
+    },
+    'errors-positive-int': {
+      title: 'Demand a positive whole number',
+      brief:
+        "Write a function requirePositiveInt(value). When value is a whole number of 1 or more, it returns value unchanged. A value is a whole number only when Number.isInteger(value) is true, so only numbers can be whole numbers. Anything that is not a whole number makes it throw a TypeError: texts (even '3'), fractions (3.5, 0.5, -2.5), NaN, Infinity, -Infinity, null, undefined, true, false, arrays (even [3]), and objects. A whole number below 1 (0, -1, -100) makes it throw a RangeError. Check the whole number rule first: 0.5 and -2.5 are not whole numbers, so they throw a TypeError and not a RangeError. Large whole numbers such as 9007199254740991 are returned, not thrown. Throw exactly a TypeError or a RangeError: a plain Error does not count, and neither does a TypeError where a RangeError is wanted. When value is a number or a text, the message of the error must contain the value written the way String(value) writes it: for 3.5 the message contains 3.5, for NaN it contains NaN, for '3' it contains 3. For any other kind of value the message can say anything.",
+      stub: `// Quest: demand a positive whole number.
+// Export requirePositiveInt(value): return value when it is a whole number of 1 or more.
+// Throw a TypeError when it is not a whole number, and a RangeError when it is below 1.
+// The message of the error mentions the bad value.
+export function requirePositiveInt(value) {
+  // your code here
+}
+`,
+      expected: [
+        '`requirePositiveInt(3)` gives `3`',
+        "`requirePositiveInt('3')` throws `TypeError`",
+        '`requirePositiveInt(3.5)` throws `TypeError`',
+        '`requirePositiveInt(0)` throws `RangeError`',
+      ],
+      specific: [
+        'Use the exact error types. The message mentions the bad value.',
+        'Ask whether it is a whole number before you compare it with 1, because the order decides which error a fraction gets.',
+      ],
+    },
+    'errors-retry': {
+      title: 'Try again',
+      brief:
+        'Write a function retry(fn, attempts). It calls fn, with no arguments, until a call does not throw, and returns what that call returned. It calls fn at most attempts times: it stops at the first call that does not throw, and it never calls fn again after that. When all attempts throw, retry throws the error of the last call, the very same error that fn threw, not a new error and not an error that wraps it. attempts is a whole number of 1 or more. What fn throws is an error object or a text. What fn returns is a success, even when it is falsy (0, an empty text, false, null, undefined), and retry returns it as it is. fn is an ordinary function: there are no promises or async code in this quest. In the test messages, failTimes(n, value) means a function that throws on its first n calls and then returns value (undefined when value is left out).',
+      stub: `// Quest: try again.
+// Export retry(fn, attempts): call fn with no arguments until a call does not throw, and return its result.
+// Call fn at most attempts times. If every call throws, throw the error of the last call, as it is.
+export function retry(fn, attempts) {
+  // your code here
+}
+`,
+      expected: [
+        'A `fn` that throws twice and then returns `7`: `retry(fn, 3)` gives `7`, and `fn` ran 3 times',
+        'The same `fn`: `retry(fn, 2)` throws the error of the second call, and `fn` ran 2 times',
+        'A `fn` that returns `0` at once: `retry(fn, 5)` gives `0`, and `fn` ran 1 time',
+      ],
+      specific: [
+        'Do not call fn more than attempts times, and do not call it again after it worked.',
+        'Do not hide the original error: keep the last error in a variable that lives outside the try block, and throw that one.',
+      ],
+    },
+    'timeouts-call-later': {
+      title: 'Run it later',
+      brief:
+        'Write a function callLater(fn, ms). It takes a function and a number of milliseconds, and makes fn run once, after ms milliseconds have passed. fn is called with no arguments. callLater itself does not call fn, and fn does not run before the time is up: it has not run at ms - 1, it has run exactly once at ms, and it never runs again, however much more time passes. ms is a whole number from 1 up. Every call of callLater schedules its own run, so two calls with different functions or different delays never affect each other. What callLater returns is not checked. The check does not wait for real: time is simulated, and the check moves a fake clock forward to see when fn runs.',
+      stub: `// Quest: run it later.
+// Export callLater(fn, ms): make fn run once, with no arguments, after ms milliseconds.
+// ms is a whole number from 1 up. Time is simulated in the check, so nothing waits for real.
+export function callLater(fn, ms) {
+  // your code here
+}
+`,
+      expected: [
+        'After `callLater(fn, 100)`, `fn` has run 0 times at 99 ms and 1 time at 100 ms',
+        'Later still, at 5000 ms, `fn` has run 1 time in all',
+        'After `callLater(fnA, 50)` and `callLater(fnB, 100)`, at 99 ms `fnA` has run 1 time and `fnB` has run 0 times',
+      ],
+      specific: [
+        'Use setTimeout, and pass it fn itself. Writing fn() would run the function right away.',
+        'A timer that repeats is not what is asked: fn must run once.',
+      ],
+    },
+    'timeouts-cancellable': {
+      title: 'Run it later, unless cancelled',
+      brief:
+        'Write a function cancellable(fn, ms). It makes fn run once, after ms milliseconds, and returns a function that cancels that run. Call the returned function cancel. cancellable itself does not call fn, and fn does not run before ms milliseconds have passed. When cancel is called before that time, fn never runs, however much time passes afterwards. When cancel is never called, fn runs exactly once, at ms, and never again. Calling cancel after fn has already run does nothing, and calling cancel twice or more is fine. Every call of cancellable has its own timer, so two cancellables never affect each other: cancelling one does not stop the other, in whichever order they were made and cancelled. ms is a whole number from 1 up. cancel is called with no arguments and what it returns is not checked. The check does not wait for real: time is simulated, and the check moves a fake clock forward to see when fn runs.',
+      stub: `// Quest: run it later, unless cancelled.
+// Export cancellable(fn, ms): make fn run once after ms milliseconds, and return a cancel function.
+// Calling cancel before the time is up stops fn for good. Each cancellable has its own timer.
+export function cancellable(fn, ms) {
+  // your code here
+}
+`,
+      expected: [
+        'After `const cancel = cancellable(fn, 100)` and no `cancel()` call, `fn` has run 0 times at 99 ms and 1 time at 100 ms',
+        'After `const cancel = cancellable(fn, 100)` and `cancel()` at 50 ms, `fn` has run 0 times at 100 ms and at 5000 ms',
+        'A `cancel()` call after `fn` already ran changes nothing: `fn` has run 1 time in all',
+      ],
+      specific: [
+        'Keep the timer id in a variable inside cancellable and stop it with clearTimeout. A variable outside the function would be shared by every cancellable.',
+        'Calling cancel twice is fine: clearing a timer that is already gone does no harm.',
+      ],
+    },
+    'timeouts-debounce': {
+      title: 'Wait for quiet',
+      brief:
+        'Write a function debounce(fn, ms). It takes a function and a number of milliseconds, and returns a new function. Call the new function the debounced function. When the debounced function is called, fn does not run yet: it runs only after ms milliseconds have passed without another call, and it runs once, with the arguments of the latest call, all of them, in the same order and count (none, one, two, or more). Every call restarts the wait: when the debounced function is called again before ms have passed, the earlier call is dropped and the wait starts over from the new call. So three calls within ms run fn once, with the arguments of the third call, and fn has not run at ms - 1 of quiet. A call made after fn has run starts a new round, and fn runs again after ms of quiet. After a round has run, nothing runs again until the next call. debounce itself does not call fn, and fn never runs before ms of quiet. Every call of debounce makes its own debounced function with its own wait and its own latest arguments, so two debounced functions never affect each other. Keep it simple: there is no option to run on the first call, no way to cancel, and this is not used. ms is a whole number from 1 up. What the debounced function returns is not checked. The check does not wait for real: time is simulated, and the check moves a fake clock forward to see when fn runs.',
+      stub: `// Quest: wait for quiet.
+// Export debounce(fn, ms): return a function that runs fn only after ms milliseconds without another call.
+// fn gets all the arguments of the latest call. Every call restarts the wait.
+export function debounce(fn, ms) {
+  // your code here
+}
+`,
+      expected: [
+        'After `const a = debounce(fn, 100)` and the calls `a(1)`, `a(2)`, `a(3)` at 0 ms, `fn` has run 0 times at 99 ms and 1 time at 100 ms, with the argument `3`',
+        'After `a(1, 2)` at 0 ms, `fn` has run 1 time at 100 ms, with the arguments `1` and `2`',
+        'After `a(1)` at 0 ms and `a(2)` at 60 ms, `fn` has run 0 times at 159 ms and 1 time at 160 ms, with the argument `2`',
+        'After `a(1)` at 0 ms and `a(2)` at 150 ms, `fn` has run 1 time at 100 ms and 2 times at 250 ms',
+      ],
+      specific: [
+        'Each call restarts the wait: clear the old timer, then start a new one. Keep the timer id in a variable inside debounce, so every debounced function has its own.',
+        'Collect the arguments with ...args and pass them on with fn(...args) inside the timer function.',
+      ],
+    },
   },
 };

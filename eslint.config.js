@@ -54,6 +54,12 @@ export const playerFacing = [
   'quests/closures-counter.js',
   'quests/closures-once.js',
   'quests/closures-memoize.js',
+  'quests/errors-safe-parse.js',
+  'quests/errors-positive-int.js',
+  'quests/errors-retry.js',
+  'quests/timeouts-call-later.js',
+  'quests/timeouts-cancellable.js',
+  'quests/timeouts-debounce.js',
   'quests/style.js',
 ];
 

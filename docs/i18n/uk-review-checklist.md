@@ -63,6 +63,12 @@ Rules to hold the text to:
 - [ ] `closures-counter` : title, brief, starter file comments, expected examples, specific style directions.
 - [ ] `closures-once` : title, brief, starter file comments, expected examples, specific style directions.
 - [ ] `closures-memoize` : title, brief, starter file comments, expected examples, specific style directions.
+- [ ] `errors-safe-parse` : title, brief, starter file comments, expected examples, specific style directions.
+- [ ] `errors-positive-int` : title, brief, starter file comments, expected examples, specific style directions.
+- [ ] `errors-retry` : title, brief, starter file comments, expected examples, specific style directions.
+- [ ] `timeouts-call-later` : title, brief, starter file comments, expected examples, specific style directions.
+- [ ] `timeouts-cancellable` : title, brief, starter file comments, expected examples, specific style directions.
+- [ ] `timeouts-debounce` : title, brief, starter file comments, expected examples, specific style directions.
 - Rung 1 terms to double check: "шаблонний рядок (template literal)" is not in the glossary, and "Глибоке злиття", "Зсув ліворуч", "Кількість з підписом", "сурогатні пари", "звичайні обʼєкти" were chosen by the drafter. The three older quests do not write the English term in brackets at first use, the new ones do: pick one convention.
 
 Each new quest adds a row here. The code in a starter file is identical to the English one, only the comments are Ukrainian.

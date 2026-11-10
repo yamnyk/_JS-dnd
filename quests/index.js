@@ -32,6 +32,12 @@ import smethodsParseQuery from './smethods-parse-query.js';
 import closuresCounter from './closures-counter.js';
 import closuresOnce from './closures-once.js';
 import closuresMemoize from './closures-memoize.js';
+import errorsSafeParse from './errors-safe-parse.js';
+import errorsPositiveInt from './errors-positive-int.js';
+import errorsRetry from './errors-retry.js';
+import timeoutsCallLater from './timeouts-call-later.js';
+import timeoutsCancellable from './timeouts-cancellable.js';
+import timeoutsDebounce from './timeouts-debounce.js';
 
 // The fixed quest list, in play order: by rung, the opening first, then subject, then easy to hard
 // (quests/curriculum.js pins the order). Checks live in the repo; the Master only reskins the story.
@@ -70,6 +76,12 @@ export const QUESTS = [
   closuresCounter,
   closuresOnce,
   closuresMemoize,
+  errorsSafeParse,
+  errorsPositiveInt,
+  errorsRetry,
+  timeoutsCallLater,
+  timeoutsCancellable,
+  timeoutsDebounce,
 ];
 
 export const getQuest = (id) => QUESTS.find((quest) => quest.id === id);
