@@ -120,3 +120,9 @@ test('How to play tells the player that /play may ask for a git pull first', () 
   assert.match(play, /git pull/);
   assert.match(play, /new commits|new version/i);
 });
+
+test('How to play tells the player the map is only the start: the Master invents places on the go', () => {
+  const play = readme.slice(at('\n## How to play'), at('\n## Tech stack'));
+  assert.match(play, /map is only the start/i);
+  assert.match(play, /forest/i);
+});

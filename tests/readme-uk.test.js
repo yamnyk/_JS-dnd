@@ -108,3 +108,8 @@ test('the Ukrainian README tells the player that /play may ask for a git pull fi
   const uk = read('README.uk.md');
   assert.match(uk.slice(uk.indexOf('## Як грати'), uk.indexOf('## Що потрібно')), /git pull/);
 });
+
+test('the Ukrainian README tells the player the map is only the start', () => {
+  const uk = read('README.uk.md');
+  assert.match(uk.slice(uk.indexOf('## Як грати'), uk.indexOf('## Що потрібно')), /карта це лише початок/i);
+});

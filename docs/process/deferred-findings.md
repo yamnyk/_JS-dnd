@@ -204,3 +204,10 @@ Legend for status: **open** means still true in the code, **fixed** means a late
 - Deferred minors:
   - `import { setTimeout } from 'node:timers'`, a module level `const schedule = setTimeout`, and an `async` solution that waits on a promise are not reached by the mock clock, so such a valid solution fails. The brief now tells players to call the global `setTimeout`.
   - `safeParse` that calls `json.trim()` first fails the trap cases with a raw error. The brief says only the trap objects are not texts.
+
+## Master invents places, people, and tasks: progress, 2026-11-10
+
+- Built and pushed: migration 16 (detours, invented people, side tasks, rewards ledger, the `reward` item source), the safety rules (`game/improv.js`), detours with `detour enter|leave|show|list`, `go` leaving a detour, the real seven needing the map, the hero line and state line, and the "Beyond the map" brief section. Places are the part that stops the Master refusing.
+- Still to build, in plan order: invented people (`npc invent`, `talk "<name>"`), rewards (`reward gold|item`), improvised fights (`fight begin --improv`), story tasks (`side add|list|done|drop`), JS side quests (`side propose|check` and the `side-smith` agent), README and brief updates for each, the Ukrainian review rows, and a final review.
+- The brief currently tells the Master that invented people and errands are narration only. That sentence must be replaced as each piece lands.
+- The earlier plan note that this should wait for the curriculum was my call and cost two days. Rungs 5 and 6 and the capstone now follow this plan, not the other way round.

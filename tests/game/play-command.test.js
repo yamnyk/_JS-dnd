@@ -419,3 +419,36 @@ test('CLAUDE.md names the update check, where it lives, and the switch that turn
     assert.ok(claudeMd.includes(word), `CLAUDE.md never mentions ${word}`);
   }
 });
+
+test('the brief tells the Master the map is the spine, not a limit, and how to save an invented place', () => {
+  const start = skill.indexOf('## Beyond the map');
+  const end = skill.indexOf('## Read when it comes up');
+  assert.ok(start >= 0 && end > start, 'the Beyond the map section is missing or misplaced');
+  const section = skill.slice(start, end);
+  assert.match(section, /spine of the story, not its limit/i);
+  assert.match(section, /say yes/i);
+  assert.match(section, /save every invention/i);
+  assert.ok(section.includes('node game/cli.js detour enter'));
+  assert.ok(section.includes('node game/cli.js detour leave'));
+  assert.ok(section.includes('node game/cli.js detour show'));
+  assert.match(section, /go <exit>/);
+  assert.match(section, /never invent a quest that counts/i);
+  assert.match(section, /spaceship/i);
+});
+
+test('the ground rule no longer says the scripts are the whole world', () => {
+  assert.doesNotMatch(skill, /Everything is stored and read through scripts/);
+  assert.match(skill, /game state that the scripts own/i);
+  assert.match(skill, /Beyond the map/);
+});
+
+test('a detour command named in the brief exists in the usage text', () => {
+  const usage = readFileSync(join(root, 'game', 'cli-main.js'), 'utf8');
+  for (const command of ['detour enter', 'detour leave', 'detour show']) assert.ok(usage.includes(command), command);
+});
+
+test('CLAUDE.md names the detour rules: where they live, and that invented content never touches the ladder', () => {
+  for (const word of ['game/detours.js', 'game/improv.js', 'detour_id']) {
+    assert.ok(claudeMd.includes(word), `CLAUDE.md never mentions ${word}`);
+  }
+});

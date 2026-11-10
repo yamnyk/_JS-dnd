@@ -76,7 +76,7 @@ Each new quest adds a row here. The code in a starter file is identical to the E
 ## Other files
 
 - [ ] `setup.sh` : every `uk:` line in the message table.
-- [ ] `README.uk.md` : the Ukrainian landing page.
+- [ ] `README.uk.md` : the Ukrainian landing page, including the new paragraph about places the Master invents.
 
 ## What the lint guard does not catch
 

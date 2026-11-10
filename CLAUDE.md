@@ -36,6 +36,12 @@ A D&D-style adventure played in the terminal where every quest is a JS task. Pub
 - Health, gold, and items live in SQLite (`game/vitals.js`, `game/inventory.js`). The status line shows them above the stamina bar (`game/hero-line.js`). Max HP is the class hit die plus the CON modifier (`game/hero-stats.js`, `game/rules.js`).
 - Gold and items are paid by `judgeQuest` and the fight engine, and taken back by `revokeSolve`. Nothing else writes them.
 
+## Invented content
+
+- The 6 places and 7 people are the spine, not a limit. The Master invents places as detours (`game/detours.js`): the hero keeps their real map place and gets a `detour_id` while off the map, so rest, quests, and the status bar keep working. `go` from a detour leaves it. A tamper reset or a lost fight brings the hero back to the map and keeps the invented places.
+- Every invented name and text goes through `game/improv.js` (limits of 50 per kind, no slot lookalikes, no invisible characters, banned phrases per language). Invented content never opens a rung, solves a ladder quest, or unlocks the ending.
+- The plan for the rest (people, errands, rewards, improvised fights, JS side quests) is in the Master-invents plan; what is built so far is places only.
+
 ## Session start
 
 The SessionStart hook prints the dev state (tasks, last completed, predictions, board). Greet Gogi with that current state, short, before anything else.
