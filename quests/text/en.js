@@ -411,5 +411,266 @@ export function compose(...fns) {
       ],
       specific: ['Do not use eval.', 'Read right to left: the last function you receive runs first.'],
     },
+    'callbacks-times': {
+      title: 'Call it n times',
+      brief:
+        'Write a function times(n, fn). n is a whole number from 0 up and fn is a function. times calls fn once for each number i from 0 up to n - 1, in that order, with i as the only argument: fn(0), fn(1), and so on up to fn(n - 1). When n is 0, fn is never called. What fn returns does not matter and must not change how many times it is called, even when it returns a falsy value like 0 or false. times itself returns nothing, which means it returns undefined.',
+      stub: `// Quest: call it n times.
+// Export times(n, fn): call fn(i) for each i from 0 up to n - 1, in order.
+// fn gets exactly one argument, i. When n is 0, fn is never called.
+// Return nothing (undefined). Do not collect or return what fn gives back.
+export function times(n, fn) {
+  // your code here
+}
+`,
+      expected: [
+        '`times(3, (i) => log.push(i))` gives `undefined`, and then `log` is `[0, 1, 2]`',
+        '`times(1, (i) => log.push(i))` gives `undefined`, and then `log` is `[0]`',
+        '`times(0, (i) => log.push(i))` gives `undefined`, and `log` is still `[]`',
+      ],
+      specific: ['Return `undefined`. Do not collect the results of fn.', 'Call fn with i only, once for each i.'],
+    },
+    'callbacks-my-map': {
+      title: 'Build your own map',
+      brief:
+        'Write a function myMap(items, fn). items is an array and fn is a function. myMap returns a new array with one value for each item. For every item, call fn(item, index) once, where index is the place of the item in the array (0 for the first), and put what fn returns at the same place in the new array. Keep every returned value, even when it is falsy or undefined. An empty array gives []. Do not change items, and do not return items itself. The built-in array methods that would do this job for you are off limits: map, filter, forEach, reduce, reduceRight, flatMap, some, every, find, findIndex, findLast, and findLastIndex. The check hands you a copy of the array where calling any of them fails, because the point of this quest is to write the loop yourself. A for loop, for...of, a while loop, recursion, or reading items[index] all work. The order in which you call fn is not checked.',
+      stub: `// Quest: build your own map.
+// Export myMap(items, fn): return a new array of fn(item, index) for every item.
+// Do not use the built-in map, filter, forEach, reduce, reduceRight, flatMap, some, every,
+// find, findIndex, findLast, or findLastIndex: the check makes them fail. Write the loop yourself.
+// Do not change items. An empty array gives [].
+export function myMap(items, fn) {
+  // your code here
+}
+`,
+      expected: [
+        '`myMap([1, 2], (x) => x * 2)` gives `[2, 4]`',
+        '`myMap([10, 20, 30], (x, i) => x + i)` gives `[10, 21, 32]`',
+        '`myMap([1, 2, 3], () => undefined)` gives `[undefined, undefined, undefined]`',
+        '`myMap([], (x) => x)` gives `[]`',
+      ],
+      specific: [
+        'The callback receives both the item and its index.',
+        'Loop yourself: the built-in array methods listed above fail the check.',
+      ],
+    },
+    'callbacks-my-filter': {
+      title: 'Build your own filter',
+      brief:
+        'Write a function myFilter(items, fn). items is an array and fn is a function. myFilter returns a new array with the items for which fn(item, index) gives a truthy value, in their original order. index is the place of the item in the array (0 for the first). fn is called once for every item, whatever it answered for the earlier ones. Only the truthiness of what fn returns counts, so 1, "yes", and [] keep the item, and 0, "", null, and undefined drop it. Items are kept as they are, so a falsy item like 0, "", false, or null stays when fn says to keep it, and an object comes back as the very same object. If no item passes, the result is []. Do not change items, and do not return items itself. The built-in array methods that would do this job for you are off limits: map, filter, forEach, reduce, reduceRight, flatMap, some, every, find, findIndex, findLast, and findLastIndex. The check hands you a copy of the array where calling any of them fails, because the point of this quest is to write the loop yourself. A for loop, for...of, a while loop, recursion, or reading items[index] all work. The order in which you call fn is not checked.',
+      stub: `// Quest: build your own filter.
+// Export myFilter(items, fn): return a new array of the items for which fn(item, index) is truthy.
+// Keep the original order and keep the items as they are, falsy ones like 0 included.
+// Do not use the built-in map, filter, forEach, reduce, reduceRight, flatMap, some, every,
+// find, findIndex, findLast, or findLastIndex: the check makes them fail. Write the loop yourself.
+// Do not change items.
+export function myFilter(items, fn) {
+  // your code here
+}
+`,
+      expected: [
+        '`myFilter([1, 2, 3, 4], (x) => x % 2 === 0)` gives `[2, 4]`',
+        '`myFilter([5, 6, 7, 8], (x, i) => i % 2 === 0)` gives `[5, 7]`',
+        '`myFilter([0, 1, 0, 2], () => true)` gives `[0, 1, 0, 2]`',
+        '`myFilter([], () => true)` gives `[]`',
+      ],
+      specific: [
+        'Keep the original order. Items that are falsy but kept (like `0` when fn says true) must stay.',
+        'Loop yourself: the built-in array methods listed above fail the check.',
+      ],
+    },
+    'methods-names': {
+      title: 'Names of the users',
+      brief:
+        'Write a function names(users). It receives an array of user objects. Each user has a name (a string) and may have other properties too. Return a new array with the name of each user, in the same order as the users. A name that appears twice stays twice. An empty array gives an empty array. Do not change the users array or the objects inside it.',
+      stub: `// Quest: names of the users.
+// Export names(users): return a new array with the name of each user, in the same order.
+// Repeated names stay, and an empty array gives []. Do not change users.
+export function names(users) {
+  // your code here
+}
+`,
+      expected: [
+        "`names([{ name: 'Ada' }, { name: 'Bo' }])` gives `['Ada', 'Bo']`",
+        "`names([{ name: 'Cy', age: 30 }, { name: 'Ada', age: 17 }, { name: 'Cy', age: 5 }])` gives `['Cy', 'Ada', 'Cy']`",
+        '`names([])` gives `[]`',
+      ],
+      specific: ['Use map, not a loop.', 'Do not change the users.'],
+    },
+    'methods-adult-names': {
+      title: 'Adult names, youngest first',
+      brief:
+        'Write a function adultNames(users). It receives an array of user objects. Each user has a name (a string) and an age (a whole number). Return an array with the names of the users who are 18 or older. Put the youngest first. Users of the same age go in name order, A to Z, compared with a plain a < b on the names (the names in the tests are one capital letter followed by lowercase letters, so localeCompare gives the same order). A user aged exactly 18 is included, a user aged 17 is not. Two users with the same name both stay in the result. If nobody is 18 or older, or the array is empty, return an empty array. Do not change the users array, its order, or the objects inside it.',
+      stub: `// Quest: adult names, youngest first.
+// Export adultNames(users): return the names of the users aged 18 or more.
+// Youngest first. Same age: by name, A to Z. Nobody 18 or more gives [].
+// Do not change users, its order, or the objects inside it.
+export function adultNames(users) {
+  // your code here
+}
+`,
+      expected: [
+        "`adultNames([{ name: 'Bo', age: 30 }, { name: 'Ada', age: 17 }, { name: 'Cy', age: 18 }])` gives `['Cy', 'Bo']`",
+        "`adultNames([{ name: 'Cy', age: 20 }, { name: 'Bo', age: 20 }, { name: 'Ada', age: 20 }])` gives `['Ada', 'Bo', 'Cy']`",
+        "`adultNames([{ name: 'Ada', age: 17 }])` gives `[]`",
+      ],
+      specific: ['The sort method changes the array it is called on, so copy first.', 'Chain filter, sort, and map.'],
+    },
+    'methods-totals-by-category': {
+      title: 'Totals by category',
+      brief:
+        'Write a function totalsByCategory(orders). It receives an array of order objects. Each order has a category (a string made of letters) and an amount (a number that is 0 or more, whole or with at most one decimal digit). Return a new object with one key for every category that appears in the orders. The value is the sum of the amounts of all the orders in that category. A category whose amounts add up to 0 is still a key. An empty array gives an empty object. Some tests use category names that every object already has, such as constructor, toString, and hasOwnProperty, and they must count like any other name. The order of the keys does not matter, and a total that is off by a tiny floating point error (0.30000000000000004 instead of 0.3) is accepted. Every call starts from nothing: a second call must not remember the first one. Do not change the orders array or the objects inside it.',
+      stub: `// Quest: totals by category.
+// Export totalsByCategory(orders): each order has a category (string) and an amount (number).
+// Return a new object: every category is a key, its value is the sum of the amounts in that category.
+// Empty orders give {}. A category with a total of 0 is still a key.
+// Names like "constructor" must work too. Do not change orders.
+export function totalsByCategory(orders) {
+  // your code here
+}
+`,
+      expected: [
+        "`totalsByCategory([{ category: 'a', amount: 2 }, { category: 'b', amount: 1 }, { category: 'a', amount: 3 }])` gives `{ a: 5, b: 1 }`",
+        "`totalsByCategory([{ category: 'food', amount: 12.5 }, { category: 'food', amount: 0.5 }])` gives `{ food: 13 }`",
+        "`totalsByCategory([{ category: 'constructor', amount: 2 }, { category: 'constructor', amount: 3 }])` gives `{ constructor: 5 }`",
+        '`totalsByCategory([])` gives `{}`',
+      ],
+      specific: [
+        'Use reduce, starting from an empty object.',
+        "Categories like 'constructor' must still count correctly.",
+      ],
+    },
+    'smethods-title-case': {
+      title: 'Title case',
+      brief:
+        "Write a function titleCase(text). It receives a string made of letters and single spaces and returns a string where every word starts with an upper case letter and the rest of the word is lower case. A word is the run of characters between single spaces, and the spaces stay where they are. The text never starts or ends with a space and never has two spaces in a row. An empty text gives ''. Accents, digits, and other characters are not tested.",
+      stub: `// Quest: title case.
+// Export titleCase(text): return the text with the first letter of every word in upper case
+// and the rest of each word in lower case. Words are separated by single spaces.
+// An empty text gives an empty string.
+export function titleCase(text) {
+  // your code here
+}
+`,
+      expected: [
+        "`titleCase('hello bIG world')` gives `'Hello Big World'`",
+        "`titleCase('HELLO')` gives `'Hello'`",
+        "`titleCase('a b')` gives `'A B'`",
+        "`titleCase('')` gives `''`",
+      ],
+      specific: ['Keep single spaces between the words.', "An empty text gives ''."],
+    },
+    'smethods-slugify': {
+      title: 'Make a slug',
+      brief:
+        "Write a function slugify(title). It receives a string of ASCII characters and returns a slug. First turn the text to lower case. Then replace every run of characters that are not a-z or 0-9 with one '-'. Then remove a '-' at the start and a '-' at the end. Spaces, punctuation, tabs, and the underscore all count as characters that are not a-z or 0-9. A text with nothing left gives ''. Accents and other letters outside a-z are not tested.",
+      stub: `// Quest: make a slug.
+// Export slugify(title): lower-case the text, replace every run of characters
+// that are not a-z or 0-9 with one '-', then remove a '-' at the start or the end.
+// A text with nothing left gives an empty string.
+export function slugify(title) {
+  // your code here
+}
+`,
+      expected: [
+        "`slugify('Hello, World!')` gives `'hello-world'`",
+        "`slugify('  A  b ')` gives `'a-b'`",
+        "`slugify('snake_case_2')` gives `'snake-case-2'`",
+        "`slugify('!!!')` gives `''`",
+      ],
+      specific: [
+        'A regular expression is fine here.',
+        'A run of several separators gives one dash, and no dash stays at the start or the end.',
+      ],
+    },
+    'smethods-parse-query': {
+      title: 'Parse a query',
+      brief:
+        "Write a function parseQuery(qs). It receives a query string and returns an object that maps each key to an array of its values, all strings. Split the string at every '&' into pieces and skip every empty piece (as in 'a=1&&b=2', or with a '&' at the start or the end). Split each piece at its first '=': the part before it is the key, the part after it is the value, and any later '=' stays in the value. A piece without '=' is a key with the value ''. In a key or a value, turn every '+' into a space, then decode it with decodeURIComponent. Splitting comes first and decoding last, so an encoded %26 or %3D is a plain character of the key or value. A repeated key collects its values in order in one array. The empty string gives {}. Keys such as constructor and toString must work. Percent signs that are not valid, empty keys, and the key __proto__ are not tested. The order of the keys does not matter.",
+      stub: `// Quest: parse a query.
+// Export parseQuery(qs): return an object that maps every key of the query string to an array
+// of its values (strings). Pieces are separated by '&' and empty pieces are skipped.
+// Split each piece at its first '='. A key without '=' gets the value ''.
+// Turn '+' into a space, then decode with decodeURIComponent. Repeated keys collect their values in order.
+// The empty string gives {}.
+export function parseQuery(qs) {
+  // your code here
+}
+`,
+      expected: [
+        "`parseQuery('a=1&b=two&a=3')` gives `{ a: ['1', '3'], b: ['two'] }`",
+        "`parseQuery('name=Ada%20L')` gives `{ name: ['Ada L'] }`",
+        "`parseQuery('x&y=')` gives `{ x: [''], y: [''] }`",
+        "`parseQuery('')` gives `{}`",
+      ],
+      specific: [
+        'Use decodeURIComponent, and turn + into a space before you decode.',
+        "Words like 'constructor' must still work as keys.",
+      ],
+    },
+    'closures-counter': {
+      title: 'A counter that remembers',
+      brief:
+        'Write a function makeCounter(start = 0). It returns a new function. Each time that new function is called, it gives the next number: the first call gives start, the second gives start + 1, the third gives start + 2, and so on. start is a whole number, possibly negative, and it is 0 when it is left out. The returned function takes no arguments. Every call of makeCounter makes a counter with its own count, so two counters count independently: calling one never changes the other, however the calls are mixed.',
+      stub: `// Quest: a counter that remembers.
+// Export makeCounter(start = 0): return a function that gives start, then start + 1, and so on.
+// Each counter keeps its own count, so two counters never affect each other.
+export function makeCounter(start = 0) {
+  // your code here
+}
+`,
+      expected: [
+        '`const c = makeCounter(5)`, then `c()` called three times gives `5`, `6`, `7`',
+        '`const c = makeCounter()`, then `c()` called twice gives `0`, `1`',
+        '`const c = makeCounter(-1)`, then `c()` called three times gives `-1`, `0`, `1`',
+        'After `const a = makeCounter(10)` and `const b = makeCounter()`, the calls `a()`, `b()`, `a()` give `10`, `0`, `11`',
+      ],
+      specific: [
+        'Keep the count in a variable inside makeCounter. A variable outside the function would be shared by every counter.',
+        'The default parameter does the work for start: write it in the parameter list, as the starter file shows.',
+      ],
+    },
+    'closures-once': {
+      title: 'Run it only once',
+      brief:
+        'Write a function once(fn). It takes a function and returns a new function. The first time the new function is called, it calls fn with the arguments it received, in the same order and count, and returns what fn returned. Every later call does not call fn again, ignores its arguments, and returns that first result. This holds even when the first result is undefined or falsy (0, an empty text, false, null): fn still runs only once. once itself does not call fn, and a new function that is never called never runs fn. Every call of once makes a wrapper with its own state: two wrappers never affect each other, even when they were made from the same fn, and each of them runs fn on its own first call.',
+      stub: `// Quest: run it only once.
+// Export once(fn): return a function that calls fn on its first call only.
+// Pass the arguments of the first call to fn. Every call returns the first result.
+export function once(fn) {
+  // your code here
+}
+`,
+      expected: [
+        'After `const w = once((a, b) => a + b)`, `w(2, 3)` gives `5`',
+        'Then `w(10, 20)` gives `5` again and the function does not run a second time',
+        'After `const n = once(() => undefined)`, calling `n()` three times gives `undefined` each time and runs the function once',
+      ],
+      specific: [
+        'Pass the arguments through on the first call. Later arguments are ignored.',
+        'Keep whether fn ran in its own variable inside once. Do not guess it from the result: the result can be undefined or 0.',
+      ],
+    },
+    'closures-memoize': {
+      title: 'Remember the results',
+      brief:
+        "Write a function memoize(fn). It takes a function and returns a new function. The new function calls fn with the arguments it received and returns the result, and it remembers that result by its arguments: when it is called again with the same arguments, it returns the remembered result and does not call fn again. Different arguments run fn again, and each result is remembered on its own. Arguments are the same only when they have the same values, in the same order, and the same count: (1, 23) and (12, 3) are different, (1) and (1, 1) are different, 1 and '1' are different, and one text 'a,b' is different from the two texts 'a' and 'b'. A call with no arguments counts as a call like any other, so fn runs once for it. The result can be any value, including falsy ones (0, an empty text, false, null, undefined): those are remembered too, so fn does not run again for the same arguments. memoize itself does not call fn. The memory lives inside memoize and cannot be reached from outside. Every call of memoize gets its own memory: two memoized functions never share results, even when they were made from the same fn. Arguments are only numbers and short texts, and a text can hold commas, spaces, and other symbols. Objects, arrays, and functions as arguments are not tested.",
+      stub: `// Quest: remember the results.
+// Export memoize(fn): return a function that calls fn and remembers each result by its arguments.
+// The same arguments again give the remembered result without calling fn. Keep the memory inside memoize.
+export function memoize(fn) {
+  // your code here
+}
+`,
+      expected: [
+        'After `const add = memoize((a, b) => a + b)`, calling `add(2, 3)` twice gives `5` both times and runs the function once',
+        'After `const pack = memoize((a, b) => a * 100 + b)`, `pack(1, 23)` gives `123` and `pack(12, 3)` gives `1203`',
+        'After `const zero = memoize(() => 0)`, calling `zero(7)` twice gives `0` both times and runs the function once',
+      ],
+      specific: [
+        'Build one key from all the arguments, so that (1, 23) and (12, 3) never share a key. Joining them with nothing between them is not enough.',
+        'Keep the memory in a variable inside memoize. Not on fn, and not in a variable outside the function.',
+      ],
+    },
   },
 };

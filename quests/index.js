@@ -20,6 +20,18 @@ import loopsCollatz from './loops-collatz.js';
 import functionsClamp from './functions-clamp.js';
 import functionsApplyN from './functions-apply-n.js';
 import functionsCompose from './functions-compose.js';
+import callbacksTimes from './callbacks-times.js';
+import callbacksMyMap from './callbacks-my-map.js';
+import callbacksMyFilter from './callbacks-my-filter.js';
+import methodsNames from './methods-names.js';
+import methodsAdultNames from './methods-adult-names.js';
+import methodsTotalsByCategory from './methods-totals-by-category.js';
+import smethodsTitleCase from './smethods-title-case.js';
+import smethodsSlugify from './smethods-slugify.js';
+import smethodsParseQuery from './smethods-parse-query.js';
+import closuresCounter from './closures-counter.js';
+import closuresOnce from './closures-once.js';
+import closuresMemoize from './closures-memoize.js';
 
 // The fixed quest list, in play order: by rung, the opening first, then subject, then easy to hard
 // (quests/curriculum.js pins the order). Checks live in the repo; the Master only reskins the story.
@@ -46,6 +58,18 @@ export const QUESTS = [
   functionsClamp,
   functionsApplyN,
   functionsCompose,
+  callbacksTimes,
+  callbacksMyMap,
+  callbacksMyFilter,
+  methodsNames,
+  methodsAdultNames,
+  methodsTotalsByCategory,
+  smethodsTitleCase,
+  smethodsSlugify,
+  smethodsParseQuery,
+  closuresCounter,
+  closuresOnce,
+  closuresMemoize,
 ];
 
 export const getQuest = (id) => QUESTS.find((quest) => quest.id === id);

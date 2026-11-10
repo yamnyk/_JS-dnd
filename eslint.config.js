@@ -41,6 +41,18 @@ export const playerFacing = [
   'quests/functions-clamp.js',
   'quests/functions-apply-n.js',
   'quests/functions-compose.js',
+  'quests/callbacks-times.js',
+  'quests/callbacks-my-map.js',
+  'quests/callbacks-my-filter.js',
+  'quests/methods-names.js',
+  'quests/methods-adult-names.js',
+  'quests/methods-totals-by-category.js',
+  'quests/smethods-title-case.js',
+  'quests/smethods-slugify.js',
+  'quests/smethods-parse-query.js',
+  'quests/closures-counter.js',
+  'quests/closures-once.js',
+  'quests/closures-memoize.js',
   'quests/style.js',
 ];
 
