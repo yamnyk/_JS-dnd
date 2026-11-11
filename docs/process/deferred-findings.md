@@ -211,3 +211,18 @@ Legend for status: **open** means still true in the code, **fixed** means a late
 - Still to build, in plan order: invented people (`npc invent`, `talk "<name>"`), rewards (`reward gold|item`), improvised fights (`fight begin --improv`), story tasks (`side add|list|done|drop`), JS side quests (`side propose|check` and the `side-smith` agent), README and brief updates for each, the Ukrainian review rows, and a final review.
 - The brief currently tells the Master that invented people and errands are narration only. That sentence must be replaced as each piece lands.
 - The earlier plan note that this should wait for the curriculum was my call and cost two days. Rungs 5 and 6 and the capstone now follow this plan, not the other way round.
+
+## Master invents: build notes and calls, 2026-11-11
+
+- Built and pushed since the progress note above: invented people, rewards (`reward gold|item|list` with a ledger), improvised fights (`fight begin --improv`), story tasks (`side add story|list|done|drop`), JS side quests (`side propose|check`, the `side-smith` agent), the brief for each, README and README.uk.md, and the Ukrainian review rows. The "narration only" sentence is gone from the brief.
+- Calls I made, for Gogi to overrule:
+  - The 50 task cap counts open tasks, not every task ever made, so a long game does not run out of room. Places and people stay a lifetime cap of 50.
+  - `side done` takes no note: the rewards ledger already carries a reason, and a note column would need migration 17.
+  - A task's `place` is its detour name, or null on the map. The table has no map slot column, so a map task has no place to show.
+  - An improvised enemy cannot carry the name of a real person of the story (it must use `--npc`), so an improvised fight can never be used to dodge the warnings, the knockout, or the boss rules. Invented people can be fought by name and stay in the list.
+  - A JS side quest passes with no gold and no item: what it pays is the Master's call through `reward ... --task <id>`.
+  - `side check` shows the first failing call with its wanted and returned values, the same as `move check` and `quest check`. The full tests and the reference never show.
+- Deferred minors:
+  - A JS side quest brief is capped at 400 characters like every invented text. A spec with many edge cases may need to be tight.
+  - The cheating judgement of a passed side quest is the Master's, as for moves: the task is already closed when the Master reads the file, so a cheat costs honor but does not reopen it.
+  - Two `side check` calls at once on a passing file: the second one is refused as "not open" instead of returning the first result.

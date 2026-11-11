@@ -533,3 +533,13 @@ test('CLAUDE.md names side-smith and the side quest rules', () => {
     assert.ok(claudeMd.includes(word), `CLAUDE.md never mentions ${word}`);
   }
 });
+
+test('both READMEs tell the player about invented people, errands, coding side quests, fights, and logged rewards', () => {
+  const en = readFileSync(join(root, 'README.md'), 'utf8');
+  const uk = readFileSync(join(root, 'README.uk.md'), 'utf8');
+  for (const word of ['errands', 'hidden tests', 'reward', 'log', 'never opens'])
+    assert.match(en, new RegExp(word, 'i'), word);
+  for (const word of ['послуг', 'прихован', 'нагород', 'журнал', 'ніколи не відкриває'])
+    assert.match(uk, new RegExp(word, 'i'), word);
+  assert.equal(/[\u2013\u2014]/.test(en + uk), false);
+});

@@ -24,7 +24,7 @@ Built for JS beginners who want to learn programming but are tired of gamified q
 
 The Master speaks the language you picked. To switch later, tell the Master in `/play`.
 
-The map is only the start. Want to walk into a forest that is not on it, or look for a blacksmith nobody mentioned? Say so: the Master invents it, and it stays real. The same forest is there next session. The quests, the gold they pay, the final exam, and the boss still come only from the game itself.
+The map is only the start. Want to walk into a forest that is not on it, look for a blacksmith nobody mentioned, or take on a wolf on the road? Say so: the Master invents it, and it stays real. The same forest is there next session. The people you meet can ask for errands, and some errands are small coding tasks with hidden tests that the game checks. The Master can reward you with gold or an item, and every reward is written to a log. The quests, the gold they pay, the final exam, and the boss still come only from the game itself: an invented place, person, fight, or errand never opens a new rung or the ending.
 
 Health carries between fights and comes back slowly over real time, fully when you wake after a lost fight, partly with every clean solve, and fully with a rest at the start for a little gold. Clean solves pay gold, and every clean solve and won fight gives your hero an item the Master names. Items are keepsakes for now, with no effects.
 
