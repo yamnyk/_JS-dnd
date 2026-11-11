@@ -8,6 +8,7 @@ import { worldStatus } from './world-status.js';
 import { SKELETON } from '../world/skeleton.js';
 import { QUESTS } from '../quests/index.js';
 import { currentDetour, clearDetour, needMapMessage } from './detours.js';
+import { npcsHere, talkToInvented } from './improv-npcs.js';
 import { questText } from '../quests/text/index.js';
 
 const SOURCES = ['offered', 'customized', 'written'];
@@ -160,6 +161,8 @@ export function look(db, saveId) {
     location: locationRow(db, saveId, here.slot),
     // Off the map the real people are out of reach: they stand at the map place, not in the detour.
     detour: detour && { name: detour.name, description: detour.description, parent: detour.parent },
+    // Invented people who stand where the hero stands, on the map place or in the detour.
+    strangers: npcsHere(db, saveId).map((n) => ({ name: n.name })),
     exits: here.exits.map((slot) => {
       const row = locationRow(db, saveId, slot);
       return { slot, name: row.name };
@@ -197,14 +200,15 @@ export function go(db, saveId, target) {
 // only tests pass another one, to stand in for a complete ladder.
 export function talk(db, saveId, npcSlot, { quests = QUESTS } = {}) {
   const hero = requireReady(db, saveId);
+  // The real people by slot or by their name, anyone else by the name the Master gave them.
+  const raw = String(npcSlot ?? '').trim();
+  const byName = db
+    .prepare('SELECT slot FROM world_npcs WHERE save_id = ? AND lower(name) = lower(?)')
+    .get(saveId, raw);
+  const slotText = /^N[1-7]$/i.test(raw) ? raw.toUpperCase() : (byName?.slot ?? null);
+  if (slotText === null && !/^N\d+$/i.test(raw)) return talkToInvented(db, saveId, hero, raw);
   if (hero.detourId !== null) throw new Error(needMapMessage('the real people are out of reach'));
-  const spot = SKELETON.npcs.find(
-    (n) =>
-      n.slot ===
-      String(npcSlot ?? '')
-        .trim()
-        .toUpperCase(),
-  );
+  const spot = SKELETON.npcs.find((n) => n.slot === slotText);
   if (!spot || spot.location !== hero.locationSlot) throw new Error(`${npcSlot} is not here.`);
 
   requireAwake(db, saveId, spot.slot);

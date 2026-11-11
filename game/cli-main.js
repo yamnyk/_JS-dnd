@@ -53,6 +53,7 @@ import {
 import { buildEnding } from './ending.js';
 import { readVitals, restHero } from './vitals.js';
 import { enterDetour, leaveDetour, currentDetour, listDetours } from './detours.js';
+import { inventNpc, listNpcs, npcsHere } from './improv-npcs.js';
 import { listItems, countItems, nameItem } from './inventory.js';
 import { resumeState } from './resume.js';
 
@@ -72,6 +73,7 @@ const USAGE = `Commands:
   fight start "<reason>" | fight log <fightId> <actor> <action> ["<detail>"] [--roll <rollId>]
   fight end <fightId> <won|lost|fled|abandoned> | fight show <fightId>
   npc warn <slot> ["<reason>"]
+  npc invent "<name>" "<description>" "<voice>" | npc list
   fight begin --npc <slot> --tier <weak|normal|tough> --aggressor <hero|npc> [--quest <id>]
   fight attack | fight flee | fight state
   move propose --data -   (problem JSON on stdin) | move check <moveId>
@@ -93,6 +95,7 @@ const BLOCKED_WHEN_COLLAPSED = new Set([
   'roll',
   'detour enter',
   'detour leave',
+  'npc invent',
   'honor add',
   'honor event',
   'fight start',
@@ -470,9 +473,16 @@ function main() {
       break;
     }
     case 'npc': {
-      if (sub !== 'warn') fail(USAGE);
-      arity(rest, 1, 2, 'npc warn <slot> ["<reason>"]');
-      out({ ok: true, ...warnNpc(db, currentSaveId(), rest[0], rest[1]) });
+      if (sub === 'invent') {
+        arity(rest, 3, 3, 'npc invent "<name>" "<description>" "<voice>"');
+        out({ ok: true, ...inventNpc(db, currentSaveId(), { name: rest[0], description: rest[1], voice: rest[2] }) });
+      } else if (sub === 'list') {
+        arity(rest, 0, 0, 'npc list');
+        out({ ok: true, npcs: listNpcs(db, currentSaveId()) });
+      } else if (sub === 'warn') {
+        arity(rest, 1, 2, 'npc warn <slot> ["<reason>"]');
+        out({ ok: true, ...warnNpc(db, currentSaveId(), rest[0], rest[1]) });
+      } else fail(USAGE);
       break;
     }
     case 'move': {
@@ -635,7 +645,7 @@ function main() {
         out({ ok: true, ...leaveDetour(db, currentSaveId()) });
       } else if (sub === 'show') {
         arity(rest, 0, 0, 'detour show');
-        out({ ok: true, detour: currentDetour(db, currentSaveId()) });
+        out({ ok: true, detour: currentDetour(db, currentSaveId()), people: npcsHere(db, currentSaveId()) });
       } else if (sub === 'list') {
         arity(rest, 0, 0, 'detour list');
         out({ ok: true, detours: listDetours(db, currentSaveId()) });

@@ -1449,3 +1449,35 @@ test('hero show, resume, and the usage text all know about detours', () => {
   assert.match(usage, /detour enter/);
   assert.match(usage, /detour leave/);
 });
+
+// ---- invented people
+test('npc invent makes a person where the hero stands, talk by name returns the voice, look and detour show list them', () => {
+  const game = readyGame();
+  game.run('detour', 'enter', 'The Forest', 'Pines.');
+  const made = game.run('npc', 'invent', 'Old Brann', 'A one-eyed smith with soot in his beard.', 'Gruff and short.');
+  assert.equal(made.status, 0, made.stderr);
+  assert.equal(made.json.npc.place, 'The Forest');
+  assert.deepEqual(game.run('look').json.strangers, [{ name: 'Old Brann' }]);
+  const spoken = game.run('talk', 'old brann');
+  assert.equal(spoken.status, 0, spoken.stderr);
+  assert.equal(spoken.json.npc.voice, 'Gruff and short.');
+  assert.equal(spoken.json.npc.improvised, true);
+  assert.equal(game.run('detour', 'show').json.people[0].name, 'Old Brann');
+  assert.equal(game.run('npc', 'list').json.npcs.length, 1);
+  game.run('detour', 'leave');
+  assert.equal(game.run('talk', 'Old Brann').status, 1);
+});
+
+test('npc commands check their arguments, and a collapsed hero cannot invent but can list', () => {
+  const game = readyGame();
+  assert.equal(game.run('npc', 'invent').status, 1);
+  assert.equal(game.run('npc', 'invent', 'A', 'B').status, 1);
+  assert.equal(game.run('npc', 'invent', 'L2', 'd', 'v').status, 1);
+  assert.equal(game.run('npc', 'list', 'extra').status, 1);
+  assert.equal(game.run('npc', 'dance').status, 1);
+  setReading(game, 99, 100);
+  const blocked = game.run('npc', 'invent', 'Quick Mara', 'A pickpocket.', 'Sly.');
+  assert.equal(blocked.status, 1);
+  assert.equal(JSON.parse(blocked.stderr.trim()).collapsed, true);
+  assert.equal(game.run('npc', 'list').status, 0);
+});

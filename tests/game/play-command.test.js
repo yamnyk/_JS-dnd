@@ -452,3 +452,18 @@ test('CLAUDE.md names the detour rules: where they live, and that invented conte
     assert.ok(claudeMd.includes(word), `CLAUDE.md never mentions ${word}`);
   }
 });
+
+test('the brief tells the Master to save every person it invents, and talk to them by name', () => {
+  const section = skill.slice(skill.indexOf('## Beyond the map'), skill.indexOf('## Read when it comes up'));
+  assert.ok(section.includes('node game/cli.js npc invent'));
+  assert.ok(section.includes('node game/cli.js talk'));
+  assert.match(section, /strangers/);
+  assert.match(section, /npc list/);
+  assert.doesNotMatch(section, /people you invent and errands you hand out inside a place are narration only/);
+  assert.match(section, /errands/i);
+});
+
+test('every command the Beyond the map section names exists in the CLI usage text', () => {
+  const usage = readFileSync(join(root, 'game', 'cli-main.js'), 'utf8');
+  for (const command of ['npc invent', 'npc list', 'detour enter']) assert.ok(usage.includes(command), command);
+});
