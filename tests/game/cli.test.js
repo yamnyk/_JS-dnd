@@ -1481,3 +1481,73 @@ test('npc commands check their arguments, and a collapsed hero cannot invent but
   assert.equal(JSON.parse(blocked.stderr.trim()).collapsed, true);
   assert.equal(game.run('npc', 'list').status, 0);
 });
+
+// ---- rewards the Master grants
+test('reward gold and reward item pay the hero, show up in hero show and the item count, and reward list shows the ledger', () => {
+  const game = readyGame();
+  const gold = game.run('reward', 'gold', '12', 'the smith paid for the delivery');
+  assert.equal(gold.status, 0, gold.stderr);
+  assert.equal(gold.json.gold, 12);
+  const item = game.run('reward', 'item', "Brann's lucky nail", 'a thank you');
+  assert.equal(item.status, 0, item.stderr);
+  assert.equal(item.json.item.source, 'reward');
+  const vitals = game.run('hero', 'show').json.vitals;
+  assert.deepEqual([vitals.gold, vitals.items], [12, 1]);
+  assert.deepEqual(
+    game.run('reward', 'list').json.rewards.map((r) => [r.kind, r.amount, r.itemName]),
+    [
+      ['gold', 12, null],
+      ['item', null, "Brann's lucky nail"],
+    ],
+  );
+  assert.equal(game.run('item', 'list').json.items[0].source, 'reward');
+});
+
+test('reward commands check their arguments and refuse bad amounts and names as errors', () => {
+  const game = readyGame();
+  for (const args of [
+    ['reward'],
+    ['reward', 'gold'],
+    ['reward', 'gold', '5'],
+    ['reward', 'gold', 'many', 'why'],
+    ['reward', 'gold', '0', 'why'],
+    ['reward', 'gold', '-3', 'why'],
+    ['reward', 'gold', '2.5', 'why'],
+    ['reward', 'item', 'Nail'],
+    ['reward', 'item', 'L2', 'why'],
+    ['reward', 'list', 'extra'],
+    ['reward', 'bribe', '1', 'x'],
+  ]) {
+    assert.equal(game.run(...args).status, 1, args.join(' '));
+  }
+  assert.equal(game.run('hero', 'show').json.vitals.gold, 0);
+});
+
+test('a reward can name a side task with --task, and a task that does not exist is refused', () => {
+  const game = readyGame();
+  game
+    .db()
+    .prepare(
+      "INSERT INTO side_tasks (save_id, kind, title, brief, status, created_at) VALUES (1, 'story', 't', 'b', 'open', 'now')",
+    )
+    .run();
+  const tied = game.run('reward', 'gold', '4', 'errand done', '--task', '1');
+  assert.equal(tied.status, 0, tied.stderr);
+  assert.equal(tied.json.reward.sideTaskId, 1);
+  assert.equal(game.run('reward', 'gold', '4', 'errand done', '--task', '9').status, 1);
+  assert.equal(game.run('reward', 'gold', '4', 'errand done', '--task', 'x').status, 1);
+});
+
+test('a collapsed hero cannot be rewarded, but the ledger can still be read', () => {
+  const game = readyGame();
+  setReading(game, 99, 100);
+  for (const args of [
+    ['reward', 'gold', '5', 'x'],
+    ['reward', 'item', 'Nail', 'x'],
+  ]) {
+    const result = game.run(...args);
+    assert.equal(result.status, 1, args.join(' '));
+    assert.equal(JSON.parse(result.stderr.trim()).collapsed, true);
+  }
+  assert.equal(game.run('reward', 'list').status, 0);
+});

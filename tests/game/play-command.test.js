@@ -467,3 +467,14 @@ test('every command the Beyond the map section names exists in the CLI usage tex
   const usage = readFileSync(join(root, 'game', 'cli-main.js'), 'utf8');
   for (const command of ['npc invent', 'npc list', 'detour enter']) assert.ok(usage.includes(command), command);
 });
+
+test('the brief tells the Master how to hand out rewards for invented things, and that they are logged', () => {
+  const section = skill.slice(skill.indexOf('## Beyond the map'), skill.indexOf('## Read when it comes up'));
+  assert.ok(section.includes('node game/cli.js reward gold'));
+  assert.ok(section.includes('node game/cli.js reward item'));
+  assert.match(section, /reward list/);
+  assert.match(section, /logged/i);
+  assert.match(section, /honor event/);
+  const usage = readFileSync(join(root, 'game', 'cli-main.js'), 'utf8');
+  assert.ok(usage.includes('reward gold') && usage.includes('reward item'));
+});

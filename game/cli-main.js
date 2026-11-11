@@ -54,6 +54,7 @@ import { buildEnding } from './ending.js';
 import { readVitals, restHero } from './vitals.js';
 import { enterDetour, leaveDetour, currentDetour, listDetours } from './detours.js';
 import { inventNpc, listNpcs, npcsHere } from './improv-npcs.js';
+import { grantGold, grantRewardItem, listRewards } from './rewards.js';
 import { listItems, countItems, nameItem } from './inventory.js';
 import { resumeState } from './resume.js';
 
@@ -74,6 +75,7 @@ const USAGE = `Commands:
   fight end <fightId> <won|lost|fled|abandoned> | fight show <fightId>
   npc warn <slot> ["<reason>"]
   npc invent "<name>" "<description>" "<voice>" | npc list
+  reward gold <n> "<reason>" [--task <id>] | reward item "<name>" "<reason>" [--task <id>] | reward list
   fight begin --npc <slot> --tier <weak|normal|tough> --aggressor <hero|npc> [--quest <id>]
   fight attack | fight flee | fight state
   move propose --data -   (problem JSON on stdin) | move check <moveId>
@@ -96,6 +98,8 @@ const BLOCKED_WHEN_COLLAPSED = new Set([
   'detour enter',
   'detour leave',
   'npc invent',
+  'reward gold',
+  'reward item',
   'honor add',
   'honor event',
   'fight start',
@@ -154,6 +158,7 @@ const VALUE_OPTIONS = new Set([
   '--tier',
   '--aggressor',
   '--quest',
+  '--task',
 ]);
 
 // Which options each command accepts. Anything else is rejected, never silently ignored.
@@ -164,6 +169,8 @@ const ALLOWED_FLAGS = {
   'world setting': ['source', 'name', 'desc', 'voice'],
   'world fill': ['data'],
   'fight begin': ['npc', 'tier', 'aggressor', 'quest'],
+  'reward gold': ['task'],
+  'reward item': ['task'],
   'move propose': ['data'],
 };
 
@@ -469,6 +476,23 @@ function main() {
       } else if (sub === 'state') {
         arity(rest, 0, 0, 'fight state');
         out({ ok: true, fight: getFightState(db, currentSaveId()) });
+      } else fail(USAGE);
+      break;
+    }
+    case 'reward': {
+      const task = flags.task === undefined ? undefined : toInt(flags.task, 'task');
+      if (sub === 'gold') {
+        arity(rest, 2, 2, 'reward gold <n> "<reason>" [--task <id>]');
+        out({
+          ok: true,
+          ...grantGold(db, currentSaveId(), { amount: toInt(rest[0], 'amount'), reason: rest[1], taskId: task }),
+        });
+      } else if (sub === 'item') {
+        arity(rest, 2, 2, 'reward item "<name>" "<reason>" [--task <id>]');
+        out({ ok: true, ...grantRewardItem(db, currentSaveId(), { name: rest[0], reason: rest[1], taskId: task }) });
+      } else if (sub === 'list') {
+        arity(rest, 0, 0, 'reward list');
+        out({ ok: true, rewards: listRewards(db, currentSaveId()) });
       } else fail(USAGE);
       break;
     }
