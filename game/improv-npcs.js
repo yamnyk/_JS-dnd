@@ -2,7 +2,7 @@ import { inTransaction } from './db.js';
 import { getHero } from './hero.js';
 import { worldStatus } from './world-status.js';
 import { effectiveLanguage } from './i18n.js';
-import { LIMITS, checkName, checkText, assertRoom } from './improv.js';
+import { LIMITS, checkName, checkText, assertRoom, findByName } from './improv.js';
 import { tasksOfNpc } from './side-tasks.js';
 
 // People the Master invents on the go. A person stands at a map place (base_slot), and in a detour when
@@ -59,8 +59,8 @@ export function inventNpc(db, saveId, { name, description, voice } = {}) {
     const lang = effectiveLanguage(db, saveId);
     const clean = checkName(name, lang, 'Person name');
     const taken =
-      db.prepare('SELECT 1 FROM improv_npcs WHERE save_id = ? AND lower(name) = lower(?)').get(saveId, clean) ??
-      db.prepare('SELECT 1 FROM world_npcs WHERE save_id = ? AND lower(name) = lower(?)').get(saveId, clean);
+      findByName(db.prepare('SELECT name FROM improv_npcs WHERE save_id = ?').all(saveId), clean) ??
+      findByName(db.prepare('SELECT name FROM world_npcs WHERE save_id = ?').all(saveId), clean);
     if (taken) throw new Error(`Somebody called "${clean}" already exists. Talk to them, or pick another name.`);
     const text = checkText('Description', description, LIMITS.description, lang);
     const speech = checkText('Voice', voice, LIMITS.voice, lang);
@@ -78,7 +78,7 @@ export function inventNpc(db, saveId, { name, description, voice } = {}) {
 
 // Talking to someone by a name that is not a real person. The hero is already known to be ready.
 export function talkToInvented(db, saveId, hero, name) {
-  const row = db.prepare('SELECT * FROM improv_npcs WHERE save_id = ? AND lower(name) = lower(?)').get(saveId, name);
+  const row = findByName(db.prepare('SELECT * FROM improv_npcs WHERE save_id = ?').all(saveId), name);
   if (!row) {
     throw new Error(
       `"${name}" is not here. To bring a new person into the story, run: node game/cli.js npc invent "<name>" "<description>" "<voice>".`,

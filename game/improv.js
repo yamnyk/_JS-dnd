@@ -20,6 +20,12 @@ const TABLES = new Set(['detours', 'improv_npcs', 'side_tasks']);
 // A map slot written any way: L1 to L6, N1 to N7, any case, and the wide forms of the letters and digits.
 const SLOT = /^(?:L[1-6]|N[1-7])$/i;
 
+// Names are compared the way a person reads them: the same letters in any case and any Unicode form. SQL lower()
+// folds ASCII only, so every name lookup goes through these instead.
+export const foldName = (name) => String(name).normalize('NFC').toLowerCase();
+export const sameName = (a, b) => foldName(a) === foldName(b);
+export const findByName = (rows, name) => rows.find((row) => sameName(row.name, name));
+
 const INVISIBLE = /[\p{Cc}\p{Cf}]/u;
 
 function lintPhrases(label, text, lang) {
@@ -45,7 +51,8 @@ export function checkName(name, lang = 'en', label = 'Name') {
     throw new Error(`${label} "${clean}" looks like a map slot. Pick a name that is not L1 to L6 or N1 to N7.`);
   }
   lintPhrases(label, clean, lang);
-  return clean;
+  // Stored in one Unicode form, so the same name typed two ways is one name.
+  return clean.normalize('NFC');
 }
 
 // A description, voice, title, or brief: filled, short, no invisible characters. New lines are allowed.

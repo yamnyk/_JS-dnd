@@ -84,7 +84,7 @@ test('a place that hangs off another map place cannot be entered from here, and 
 
 test('a new place needs a description, and a place inside a place is its child', () => {
   const { db, saveId } = ready();
-  assert.throws(() => enterDetour(db, saveId, { name: 'The Forest' }), /Description/);
+  assert.throws(() => enterDetour(db, saveId, { name: 'The Forest' }), /needs a description/);
   const forest = enterDetour(db, saveId, { name: 'The Forest', description: 'Pines.' });
   const cave = enterDetour(db, saveId, { name: 'The Cave', description: 'Dark and damp.' });
   assert.equal(cave.detour.parent, 'The Forest');

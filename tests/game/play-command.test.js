@@ -396,7 +396,8 @@ test('the brief explains how quests open, what talk returns, and what to say whe
   assert.match(skill, /`open` list/);
   assert.match(skill, /up to 4/i);
   assert.match(skill, /road ahead is still being built/i);
-  assert.match(skill, /never invent a quest/i);
+  assert.match(skill, /never invent a ladder quest/i);
+  assert.doesNotMatch(skill, /never improvise a task/i);
   assert.match(skill, /`quest list all`/);
 });
 

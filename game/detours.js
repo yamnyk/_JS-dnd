@@ -2,7 +2,7 @@ import { inTransaction } from './db.js';
 import { getHero } from './hero.js';
 import { worldStatus } from './world-status.js';
 import { effectiveLanguage } from './i18n.js';
-import { LIMITS, checkName, checkText, assertRoom } from './improv.js';
+import { LIMITS, checkName, checkText, assertRoom, findByName } from './improv.js';
 import { tasksInDetour } from './side-tasks.js';
 
 // Places the Master invents on the go. The hero keeps a real map place (heroes.location_slot) and gets a
@@ -67,9 +67,7 @@ export function enterDetour(db, saveId, { name, description } = {}) {
     const lang = effectiveLanguage(db, saveId);
     const clean = checkName(name, lang, 'Place name');
     const current = db.prepare('SELECT * FROM detours WHERE id = ?').get(hero.detourId ?? -1) ?? null;
-    const existing = db
-      .prepare('SELECT * FROM detours WHERE save_id = ? AND lower(name) = lower(?)')
-      .get(saveId, clean);
+    const existing = findByName(db.prepare('SELECT * FROM detours WHERE save_id = ?').all(saveId), clean);
 
     if (existing) {
       if (existing.base_slot !== hero.locationSlot) {
@@ -78,12 +76,17 @@ export function enterDetour(db, saveId, { name, description } = {}) {
         );
       }
       if (existing.id !== current?.id && (existing.parent_id ?? null) !== (current?.id ?? null)) {
-        throw new Error(`"${existing.name}" lies inside another place, not here. ${LEAVE}`);
+        throw new Error(`"${existing.name}" is not inside the place the hero is in. ${LEAVE}`);
       }
       db.prepare('UPDATE heroes SET detour_id = ? WHERE save_id = ?').run(existing.id, saveId);
       return { created: false, detour: shape(db, saveId, existing) };
     }
 
+    if (description === undefined || description === null || description === '') {
+      throw new Error(
+        `"${clean}" is a new place, so it needs a description: node game/cli.js detour enter "${clean}" "<description>".`,
+      );
+    }
     const text = checkText('Description', description, LIMITS.description, lang);
     assertRoom(db, saveId, 'detours', LIMITS.places, 'places');
     const id = Number(

@@ -226,3 +226,13 @@ Legend for status: **open** means still true in the code, **fixed** means a late
   - A JS side quest brief is capped at 400 characters like every invented text. A spec with many edge cases may need to be tight.
   - The cheating judgement of a passed side quest is the Master's, as for moves: the task is already closed when the Master reads the file, so a cheat costs honor but does not reopen it.
   - Two `side check` calls at once on a passing file: the second one is refused as "not open" instead of returning the first result.
+
+## Found by the final review of Master invents (bc3f014..HEAD), 2026-11-11
+
+- Fixed (Important): name checks used SQL `lower()`, which folds ASCII only, so in a Ukrainian game the duplicate guard, the real-person guard for improvised enemies, `talk` by real name, and the place lookup were case sensitive. Every name lookup now goes through `foldName` and `findByName` in `game/improv.js` (NFC, then lower case), and stored names are NFC. The SQL unique indexes stay as an ASCII backstop. Test: `tests/game/name-folding.test.js`.
+- Fixed (Important): the Quests section of the brief still said "never improvise a task", against "Beyond the map". It now says never invent a ladder quest, and errands and side quests are allowed. The pin rejects the old sentence.
+- Fixed (Minor): the boss rules test used a hero who was not at the stronghold, so it passed whatever the boss guard did (mutant confirmed caught now); `npc invent "N8"` made a person who could not be talked to (`talk` now treats only N1 to N7 as slots, so a person called N8 can be talked to); entering a sibling place said "lies inside another place" (the message is true now); a new place without a description said "Description must be text" (it now says a new place needs one); `go` wrote the place and cleared the detour in two statements (now one transaction).
+- Deferred minors:
+  - A Cyrillic homoglyph of a slot (`Н1` with a Cyrillic Н) passes `checkName`. Nothing in the code path confuses it with a slot, it only looks alike to a human.
+  - A pre-existing `side-<id>.old.js` is overwritten when a new proposal keeps the player's earlier file. Only reachable when ids restart with an old `player/` folder.
+  - Not a defect, the existing design: a player's file runs unsandboxed in a child that can reach the game database, so it can read hidden tests, for moves and side quests alike. The Master's read of the file for cheating is the guard, as the plan says.

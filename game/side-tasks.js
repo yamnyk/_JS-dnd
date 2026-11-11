@@ -3,7 +3,7 @@ import { inTransaction } from './db.js';
 import { getHero } from './hero.js';
 import { worldStatus } from './world-status.js';
 import { effectiveLanguage } from './i18n.js';
-import { LIMITS, checkText } from './improv.js';
+import { LIMITS, checkText, findByName } from './improv.js';
 import { defaultPlayerDir } from './quests.js';
 
 // Errands the Master makes up: story tasks, which have no verdict (the Master closes them when the story
@@ -86,9 +86,10 @@ export function openTasksSummary(db, saveId, cap = RESUME_CAP) {
 // The invented person who gave a task, by name. Null when nobody did.
 export function resolveGiver(db, saveId, giver) {
   if (giver === undefined || giver === null) return null;
-  const npc = db
-    .prepare('SELECT id FROM improv_npcs WHERE save_id = ? AND lower(name) = lower(?)')
-    .get(saveId, String(giver).trim());
+  const npc = findByName(
+    db.prepare('SELECT id, name FROM improv_npcs WHERE save_id = ?').all(saveId),
+    String(giver).trim(),
+  );
   if (!npc) {
     throw new Error(
       `Nobody called "${giver}" has been invented. Make them first: node game/cli.js npc invent "<name>" "<description>" "<voice>".`,

@@ -206,8 +206,10 @@ test('the real fights still refuse from a detour, and the boss rules are untouch
   const map = ready();
   beginFight(map.db, map.saveId, { ...improv('Road Wolf'), tier: 'weak', aggressor: 'hero', rng: heroFirst() });
   heroAttack(map.db, map.saveId, { rng: script([15, 20], [5, 8]) });
+  // At the stronghold, where the boss really stands, the boss rules still refuse: the road is not built or not solved.
+  map.db.prepare("UPDATE heroes SET location_slot = 'L6' WHERE save_id = ?").run(map.saveId);
   assert.throws(
     () => beginFight(map.db, map.saveId, { npcSlot: 'N7', tier: 'tough', aggressor: 'hero', rng: heroFirst() }),
-    /./,
+    /way to the final boss is shut/,
   );
 });

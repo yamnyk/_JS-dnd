@@ -15,7 +15,7 @@ import { syncHp, setHp, fullHeal } from './vitals.js';
 import { grantItem } from './inventory.js';
 import { needMapMessage } from './detours.js';
 import { effectiveLanguage } from './i18n.js';
-import { checkName } from './improv.js';
+import { checkName, findByName } from './improv.js';
 
 // Re-exported so the fight engine stays the one place callers import fights from.
 export { openFight, getFightState };
@@ -74,7 +74,7 @@ const clearWarnings = (db, fight) => {
 // can never be a real person of the story: the real seven have their own rules (warnings, knockouts, the boss).
 function improvisedEnemyName(db, saveId, name) {
   const clean = checkName(name, effectiveLanguage(db, saveId), 'Enemy name');
-  if (db.prepare('SELECT 1 FROM world_npcs WHERE save_id = ? AND lower(name) = lower(?)').get(saveId, clean)) {
+  if (findByName(db.prepare('SELECT name FROM world_npcs WHERE save_id = ?').all(saveId), clean)) {
     throw new Error(`"${clean}" is a real person of the story. Fight them with --npc, or pick another name.`);
   }
   return clean;

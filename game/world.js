@@ -9,6 +9,7 @@ import { SKELETON } from '../world/skeleton.js';
 import { QUESTS } from '../quests/index.js';
 import { currentDetour, clearDetour, needMapMessage } from './detours.js';
 import { npcsHere, talkToInvented } from './improv-npcs.js';
+import { findByName } from './improv.js';
 import { questText } from '../quests/text/index.js';
 
 const SOURCES = ['offered', 'customized', 'written'];
@@ -190,9 +191,12 @@ export function go(db, saveId, target) {
       `"${target}" is not an exit from ${current.name}. Exits: ${exits.map((e) => `${e.slot} ${e.name}`).join(', ')}.`,
     );
   }
-  db.prepare('UPDATE heroes SET location_slot = ? WHERE save_id = ?').run(destination.slot, saveId);
-  // Walking on from a detour, at any depth, leaves all of them.
-  clearDetour(db, saveId);
+  // One unit: a crash between the two writes must not leave the hero at a new place inside an old detour.
+  inTransaction(db, () => {
+    db.prepare('UPDATE heroes SET location_slot = ? WHERE save_id = ?').run(destination.slot, saveId);
+    // Walking on from a detour, at any depth, leaves all of them.
+    clearDetour(db, saveId);
+  });
   return { location: { slot: destination.slot, name: destination.name } };
 }
 
@@ -202,11 +206,10 @@ export function talk(db, saveId, npcSlot, { quests = QUESTS } = {}) {
   const hero = requireReady(db, saveId);
   // The real people by slot or by their name, anyone else by the name the Master gave them.
   const raw = String(npcSlot ?? '').trim();
-  const byName = db
-    .prepare('SELECT slot FROM world_npcs WHERE save_id = ? AND lower(name) = lower(?)')
-    .get(saveId, raw);
+  const byName = findByName(db.prepare('SELECT slot, name FROM world_npcs WHERE save_id = ?').all(saveId), raw);
   const slotText = /^N[1-7]$/i.test(raw) ? raw.toUpperCase() : (byName?.slot ?? null);
-  if (slotText === null && !/^N\d+$/i.test(raw)) return talkToInvented(db, saveId, hero, raw);
+  // Only N1 to N7 are slots: a person called N8 is invented, and is found by name.
+  if (slotText === null) return talkToInvented(db, saveId, hero, raw);
   if (hero.detourId !== null) throw new Error(needMapMessage('the real people are out of reach'));
   const spot = SKELETON.npcs.find((n) => n.slot === slotText);
   if (!spot || spot.location !== hero.locationSlot) throw new Error(`${npcSlot} is not here.`);
