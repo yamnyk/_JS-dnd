@@ -8,6 +8,9 @@ export default {
   'move.stub.export': 'Export a function named solve.',
   'move.stub.code': 'your code here',
 
+  // The starter file of a JS side quest. The export and code lines are the same as for a move.
+  'side.stub.title': 'Side quest: {title}',
+
   // What a quest check says. {call} is code and stays as written. The English wording is exactly what
   // the game printed before there were two languages.
   'check.timeout.message': 'Your code ran longer than {seconds} seconds and was stopped.',

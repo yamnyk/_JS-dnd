@@ -16,6 +16,7 @@ Rules to hold the text to:
 - [ ] `style.` : the code style problems, one line per ESLint rule.
 - [ ] `update.` : the message that asks the player to run `git pull` before a session, with its plural forms for the number of new commits.
 - [ ] `move.` : the starter file comments of a combat move.
+- [ ] `side.` : the starter file title of a JS side quest ("Побічний квест: {title}"). Is "квест" the right word for an errand that is a coding task, or should it be "завдання"? The other two lines of that file reuse the `move.` ones.
 - [ ] `hero.` : the hero line above the stamina bar (name, level, health, gold, items with plural forms, place).
 - [ ] `stamina.` : the stamina bar, the estimate marker, the collapse line with its plural forms for hours (one, few, many, other).
 - [ ] `ending.` : every heading and label on the ending page, including the date and duration wording.

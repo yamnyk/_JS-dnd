@@ -56,6 +56,7 @@ import { enterDetour, leaveDetour, currentDetour, listDetours } from './detours.
 import { inventNpc, listNpcs, npcsHere } from './improv-npcs.js';
 import { grantGold, grantRewardItem, listRewards } from './rewards.js';
 import { addStoryTask, listTasks, finishTask, dropTask } from './side-tasks.js';
+import { proposeSideQuest, checkSideQuest } from './side-quests.js';
 import { listItems, countItems, nameItem } from './inventory.js';
 import { resumeState } from './resume.js';
 
@@ -78,6 +79,7 @@ const USAGE = `Commands:
   npc invent "<name>" "<description>" "<voice>" | npc list
   reward gold <n> "<reason>" [--task <id>] | reward item "<name>" "<reason>" [--task <id>] | reward list
   side add story "<title>" "<brief>" [--giver "<name>"] | side list [all] | side done <id> | side drop <id>
+  side propose --data -   (problem JSON on stdin) | side check <id>
   fight begin (--npc <slot> | --improv "<name>") --tier <weak|normal|tough> --aggressor <hero|npc> [--quest <id>]
   fight attack | fight flee | fight state
   move propose --data -   (problem JSON on stdin) | move check <moveId>
@@ -105,6 +107,8 @@ const BLOCKED_WHEN_COLLAPSED = new Set([
   'side add',
   'side done',
   'side drop',
+  'side propose',
+  'side check',
   'honor add',
   'honor event',
   'fight start',
@@ -177,6 +181,7 @@ const ALLOWED_FLAGS = {
   'world fill': ['data'],
   'fight begin': ['npc', 'improv', 'tier', 'aggressor', 'quest'],
   'side add': ['giver'],
+  'side propose': ['data'],
   'reward gold': ['task'],
   'reward item': ['task'],
   'move propose': ['data'],
@@ -503,6 +508,13 @@ function main() {
         arity(rest, 0, 1, 'side list [all]');
         if (rest[0] !== undefined && rest[0] !== 'all') fail('side list [all]');
         out({ ok: true, tasks: listTasks(db, currentSaveId(), { all: rest[0] === 'all' }) });
+      } else if (sub === 'propose') {
+        arity(rest, 0, 0, 'side propose --data - (JSON on stdin)');
+        out({ ok: true, ...proposeSideQuest(db, currentSaveId(), readJsonFlag(flags.data)) });
+      } else if (sub === 'check') {
+        arity(rest, 1, 1, 'side check <id>');
+        const timeoutMs = process.env.JSDND_QUEST_TIMEOUT_MS ? Number(process.env.JSDND_QUEST_TIMEOUT_MS) : undefined;
+        out({ ok: true, ...checkSideQuest(db, currentSaveId(), toInt(rest[0], 'id'), { timeoutMs }) });
       } else if (sub === 'done' || sub === 'drop') {
         arity(rest, 1, 1, `side ${sub} <id>`);
         const act = sub === 'done' ? finishTask : dropTask;

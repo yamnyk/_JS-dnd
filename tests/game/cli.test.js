@@ -1678,3 +1678,84 @@ test('detour show lists the open tasks of the detour, and the usage text knows t
   const usage = game.run().stderr;
   for (const text of ['side add story', 'side list', 'side done', 'side drop']) assert.ok(usage.includes(text), text);
 });
+
+const SIDE_PROBLEM = {
+  title: 'Count the coins',
+  brief: 'Write solve(a, b) that returns the sum.',
+  difficulty: 1,
+  tests: [
+    { args: [1, 2], expected: 3 },
+    { args: [2, 2], expected: 4 },
+    { args: [10, -3], expected: 7 },
+  ],
+  reference: 'export function solve(a, b) { return a + b; }',
+};
+
+test('side propose writes the stub, side check closes the task on a pass, and the tests never show', () => {
+  const game = readyGame();
+  const proposal = game.runInput(JSON.stringify(SIDE_PROBLEM), 'side', 'propose', '--data', '-');
+  assert.equal(proposal.status, 0, proposal.stderr);
+  assert.deepEqual(Object.keys(proposal.json).sort(), ['brief', 'file', 'ok', 'taskId', 'title']);
+  assert.match(proposal.json.file, /side-\d+\.js$/);
+  const id = String(proposal.json.taskId);
+
+  writeFileSync(proposal.json.file, 'export function solve(a, b) { return a - b; }');
+  const wrong = game.run('side', 'check', id);
+  assert.equal(wrong.status, 0, wrong.stderr);
+  assert.deepEqual([wrong.json.taskStatus, wrong.json.check.status], ['open', 'fail']);
+
+  const listed = game.run('side', 'list').json.tasks;
+  assert.deepEqual([listed[0].kind, listed[0].file], ['js', proposal.json.file]);
+  assert.equal(JSON.stringify(game.run('resume').json).includes('"reference"'), false);
+
+  writeFileSync(proposal.json.file, 'export function solve(a, b) { return a + b; }');
+  const right = game.run('side', 'check', id);
+  assert.deepEqual([right.json.taskStatus, right.json.check.status, right.json.task.status], ['done', 'pass', 'done']);
+  assert.equal(game.run('side', 'list').json.tasks.length, 0);
+  assert.equal(game.run('hero', 'show').json.vitals.gold, 0);
+});
+
+test('side propose and side check refuse bad input as errors, and side done refuses a JS side quest', () => {
+  const game = readyGame();
+  const bad = game.runInput(
+    JSON.stringify({ ...SIDE_PROBLEM, reference: 'export function solve() { return 0; }' }),
+    'side',
+    'propose',
+    '--data',
+    '-',
+  );
+  assert.equal(bad.status, 1);
+  assert.match(bad.stderr, /reference/i);
+  assert.equal(game.runInput('not json', 'side', 'propose', '--data', '-').status, 1);
+  assert.equal(game.run('side', 'propose').status, 1);
+  assert.equal(game.run('side', 'check').status, 1);
+  assert.equal(game.run('side', 'check', '99').status, 1);
+  const good = game.runInput(JSON.stringify(SIDE_PROBLEM), 'side', 'propose', '--data', '-');
+  const done = game.run('side', 'done', String(good.json.taskId));
+  assert.equal(done.status, 1);
+  assert.match(done.stderr, /side check/);
+  const story = game.run('side', 'add', 'story', 'A', 'B').json.task;
+  const checked = game.run('side', 'check', String(story.id));
+  assert.equal(checked.status, 1);
+  assert.match(checked.stderr, /side done/);
+  assert.equal(game.run('side', 'drop', String(good.json.taskId)).json.task.status, 'dropped');
+});
+
+test('a collapsed hero cannot propose or check a side quest', () => {
+  const game = readyGame();
+  const good = game.runInput(JSON.stringify(SIDE_PROBLEM), 'side', 'propose', '--data', '-');
+  setReading(game, 99, 100);
+  for (const args of [['side', 'check', String(good.json.taskId)]]) {
+    const result = game.run(...args);
+    assert.equal(result.status, 1, args.join(' '));
+    assert.equal(JSON.parse(result.stderr.trim()).collapsed, true, args.join(' '));
+  }
+  const blocked = game.runInput(JSON.stringify(SIDE_PROBLEM), 'side', 'propose', '--data', '-');
+  assert.equal(blocked.status, 1);
+  assert.equal(JSON.parse(blocked.stderr.trim()).collapsed, true);
+});
+
+test('the usage text knows side propose and side check', () => {
+  const usage = readyGame().run().stderr;
+  for (const text of ['side propose --data -', 'side check <id>']) assert.ok(usage.includes(text), text);
+});

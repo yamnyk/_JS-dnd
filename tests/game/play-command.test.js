@@ -498,3 +498,38 @@ test('the brief has the Master save errands with side add story, close them, and
   assert.doesNotMatch(beyond, /narration only/i);
   assert.match(beyond, /never.*(open a rung|count)/is);
 });
+
+test('side-smith runs on sonnet with only Bash, submits through side propose, and never reports the answer', () => {
+  const smith = agentFile('side-smith.md');
+  assert.match(smith, /^---\nname: side-smith\ndescription: .+\n/);
+  assert.match(smith, /\nmodel: sonnet\n/);
+  assert.match(smith, /\ntools: Bash\n/);
+  assert.match(smith, /^omitClaudeMd: true$/m);
+  assert.ok(smith.includes("node game/cli.js side propose --data - <<'EOF'"));
+  assert.match(smith, /3 to 12/);
+  assert.match(smith, /difficulty/);
+  assert.match(smith, /giver/);
+  assert.match(smith, /60 characters/);
+  assert.match(smith, /400 characters/);
+  assert.match(smith, /export function solve/);
+  assert.match(smith, /never the tests/i);
+  assert.equal(smith.includes(String.fromCharCode(0x2014)) || smith.includes(String.fromCharCode(0x2013)), false);
+});
+
+test('the brief has the Master hand JS side quests to side-smith, check them, judge the file, and pay through rewards', () => {
+  const beyond = skill.slice(skill.indexOf('## Beyond the map'), skill.indexOf('## Read when it comes up'));
+  assert.match(beyond, /subagent_type: "side-smith"/);
+  assert.ok(beyond.includes('node game/cli.js side check'));
+  assert.match(beyond, /player\/side-<id>\.js/);
+  assert.ok(beyond.includes('node game/cli.js honor event cheat'));
+  assert.match(beyond, /never (write|send|show|type)[^.]*(tests|reference)/i);
+  assert.match(beyond, /--task/);
+  const usage = readFileSync(join(root, 'game', 'cli-main.js'), 'utf8');
+  for (const command of ['side propose', 'side check']) assert.ok(usage.includes(command), command);
+});
+
+test('CLAUDE.md names side-smith and the side quest rules', () => {
+  for (const word of ['side-smith', 'game/side-quests.js', 'game/side-tasks.js']) {
+    assert.ok(claudeMd.includes(word), `CLAUDE.md never mentions ${word}`);
+  }
+});
