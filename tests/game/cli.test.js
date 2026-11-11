@@ -1551,3 +1551,46 @@ test('a collapsed hero cannot be rewarded, but the ledger can still be read', ()
   }
   assert.equal(game.run('reward', 'list').status, 0);
 });
+
+test('fight begin --improv starts a fight with an enemy the Master made up, and fight attack and flee work on it', () => {
+  const game = readyGame();
+  const begun = game.run('fight', 'begin', '--improv', 'Road Wolf', '--tier', 'weak', '--aggressor', 'npc');
+  assert.equal(begun.status, 0, begun.stderr);
+  assert.equal(begun.json.fight.enemy.name, 'Road Wolf');
+  assert.equal(game.run('fight', 'state').json.fight.enemy.name, 'Road Wolf');
+  assert.equal(game.run('fight', 'attack').status, 0);
+  const row = game.db().prepare('SELECT npc_slot FROM fights ORDER BY id DESC LIMIT 1').get();
+  assert.equal(row.npc_slot, null);
+  game.run('fight', 'flee');
+  assert.equal(game.run('fight', 'state').json.fight, null);
+});
+
+test('fight begin --improv works from inside a detour, where the real people cannot be fought', () => {
+  const game = readyGame();
+  assert.equal(game.run('detour', 'enter', 'The Wolf Den', 'A cave that smells of wet fur.').status, 0);
+  assert.equal(game.run('fight', 'begin', '--npc', 'N1', '--tier', 'weak', '--aggressor', 'hero').status, 1);
+  const begun = game.run('fight', 'begin', '--improv', 'Den Wolf', '--tier', 'weak', '--aggressor', 'npc');
+  assert.equal(begun.status, 0, begun.stderr);
+});
+
+test('fight begin takes exactly one of --npc and --improv, and still needs tier and aggressor', () => {
+  const game = readyGame();
+  const bad = [
+    [['fight', 'begin', '--tier', 'weak', '--aggressor', 'hero'], /exactly one/],
+    [['fight', 'begin', '--npc', 'N1', '--improv', 'Wolf', '--tier', 'weak', '--aggressor', 'hero'], /exactly one/],
+    [['fight', 'begin', '--improv', 'Wolf', '--aggressor', 'hero'], /tier/i],
+    [['fight', 'begin', '--improv', 'Wolf', '--tier', 'weak'], /aggressor/i],
+    [['fight', 'begin', '--improv', 'Wolf', '--tier', 'epic', '--aggressor', 'hero'], /Unknown tier/],
+    [
+      ['fight', 'begin', '--improv', 'Wolf', '--tier', 'weak', '--aggressor', 'hero', '--quest', 'dice-roll'],
+      /cannot host a quest/,
+    ],
+    [['fight', 'begin', '--improv', 'N4', '--tier', 'weak', '--aggressor', 'hero'], /slot/i],
+  ];
+  for (const [args, message] of bad) {
+    const result = game.run(...args);
+    assert.equal(result.status, 1, args.join(' '));
+    assert.match(result.stderr + JSON.stringify(result.json ?? ''), message, args.join(' '));
+  }
+  assert.equal(game.run('fight', 'state').json.fight, null);
+});

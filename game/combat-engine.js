@@ -14,6 +14,8 @@ import { QUESTS } from '../quests/index.js';
 import { syncHp, setHp, fullHeal } from './vitals.js';
 import { grantItem } from './inventory.js';
 import { needMapMessage } from './detours.js';
+import { effectiveLanguage } from './i18n.js';
+import { checkName } from './improv.js';
 
 // Re-exported so the fight engine stays the one place callers import fights from.
 export { openFight, getFightState };
@@ -61,9 +63,22 @@ function enemyTurn(db, saveId, fight, hero, rng, modifiers) {
   return heroHp === 0;
 }
 
-// A fight is over, however it ended: the NPC's warnings start from zero.
-const clearWarnings = (db, fight) =>
+// A fight is over, however it ended: the NPC's warnings start from zero. An improvised enemy has no slot
+// and no warnings.
+const clearWarnings = (db, fight) => {
+  if (fight.npc_slot === null) return;
   db.prepare('DELETE FROM npc_warnings WHERE save_id = ? AND npc_slot = ?').run(fight.save_id, fight.npc_slot);
+};
+
+// The name of an enemy the Master made up. It follows the same safety rules as every invented name, and it
+// can never be a real person of the story: the real seven have their own rules (warnings, knockouts, the boss).
+function improvisedEnemyName(db, saveId, name) {
+  const clean = checkName(name, effectiveLanguage(db, saveId), 'Enemy name');
+  if (db.prepare('SELECT 1 FROM world_npcs WHERE save_id = ? AND lower(name) = lower(?)').get(saveId, clean)) {
+    throw new Error(`"${clean}" is a real person of the story. Fight them with --npc, or pick another name.`);
+  }
+  return clean;
+}
 
 function finishLoss(db, fight) {
   endFight(db, fight.id, 'lost');
@@ -79,13 +94,16 @@ function finishLoss(db, fight) {
 export function beginFight(
   db,
   saveId,
-  { npcSlot, tier, aggressor, questId = null, rng, modifiers, quests = QUESTS } = {},
+  { npcSlot, improv, tier, aggressor, questId = null, rng, modifiers, quests = QUESTS } = {},
 ) {
   if (!Object.hasOwn(ENEMY_TIERS, tier))
     throw new Error(`Unknown tier "${tier}". Use one of: ${Object.keys(ENEMY_TIERS).join(', ')}.`);
   if (aggressor !== 'hero' && aggressor !== 'npc')
     throw new Error(`Aggressor must be "hero" or "npc", got "${aggressor}".`);
   if (questId !== null && !getQuest(questId)) throw new Error(`Unknown quest "${questId}".`);
+  if (improv && npcSlot !== undefined)
+    throw new Error('Fight either a real person (--npc) or an improvised enemy (--improv), not both.');
+  if (improv && questId !== null) throw new Error('An improvised fight cannot host a quest.');
 
   // Everything below reads state, so it all happens under the write lock: a second begin that
   // waited for the first sees the fight the first one made and is refused.
@@ -94,35 +112,42 @@ export function beginFight(
     if (!hero) throw new Error('No hero yet. Create one first.');
     const status = worldStatus(db, saveId);
     if (!status.complete) throw new Error(`The world is not ready yet (missing: ${status.missing.join(', ')}).`);
-    if (hero.detourId !== null) throw new Error(needMapMessage('the real people cannot be fought'));
-    const slot = String(npcSlot ?? '')
-      .trim()
-      .toUpperCase();
-    const spot = SKELETON.npcs.find((n) => n.slot === slot);
-    if (!spot || spot.location !== hero.locationSlot) throw new Error(`${npcSlot} is not here.`);
-    if (openFight(db, saveId)) throw new Error('A fight is already in progress.');
-    if (slot === BOSS_SLOT) {
-      const blocker = bossBlocker(db, saveId, quests);
-      if (blocker) throw new Error(blocker);
-      if (tier !== 'tough') throw new Error('The final boss is always tough.');
-    }
-    requireAwake(db, saveId, slot);
-
-    if (questId !== null && getProgress(db, saveId).solved.includes(questId)) {
-      throw new Error(`Quest "${questId}" is already solved, so it cannot host a fight.`);
-    }
-
-    if (aggressor === 'npc' && !questId) {
-      const row = db.prepare('SELECT count FROM npc_warnings WHERE save_id = ? AND npc_slot = ?').get(saveId, slot);
-      const given = row?.count ?? 0;
-      if (given <= WARNINGS_BEFORE_FIGHT) {
-        throw new Error(
-          `${slot} has only given ${given} warning(s). They need ${WARNINGS_BEFORE_FIGHT + 1} before starting a fight.`,
-        );
+    // The enemy is either a real person (a slot, with all the rules that come with it) or one the Master made up.
+    let slot = null;
+    let npc;
+    if (improv) {
+      npc = { name: improvisedEnemyName(db, saveId, improv.name) };
+      if (openFight(db, saveId)) throw new Error('A fight is already in progress.');
+    } else {
+      if (hero.detourId !== null) throw new Error(needMapMessage('the real people cannot be fought'));
+      slot = String(npcSlot ?? '')
+        .trim()
+        .toUpperCase();
+      const spot = SKELETON.npcs.find((n) => n.slot === slot);
+      if (!spot || spot.location !== hero.locationSlot) throw new Error(`${npcSlot} is not here.`);
+      if (openFight(db, saveId)) throw new Error('A fight is already in progress.');
+      if (slot === BOSS_SLOT) {
+        const blocker = bossBlocker(db, saveId, quests);
+        if (blocker) throw new Error(blocker);
+        if (tier !== 'tough') throw new Error('The final boss is always tough.');
       }
-    }
+      requireAwake(db, saveId, slot);
 
-    const npc = db.prepare('SELECT name FROM world_npcs WHERE save_id = ? AND slot = ?').get(saveId, slot);
+      if (questId !== null && getProgress(db, saveId).solved.includes(questId)) {
+        throw new Error(`Quest "${questId}" is already solved, so it cannot host a fight.`);
+      }
+
+      if (aggressor === 'npc' && !questId) {
+        const row = db.prepare('SELECT count FROM npc_warnings WHERE save_id = ? AND npc_slot = ?').get(saveId, slot);
+        const given = row?.count ?? 0;
+        if (given <= WARNINGS_BEFORE_FIGHT) {
+          throw new Error(
+            `${slot} has only given ${given} warning(s). They need ${WARNINGS_BEFORE_FIGHT + 1} before starting a fight.`,
+          );
+        }
+      }
+      npc = db.prepare('SELECT name FROM world_npcs WHERE save_id = ? AND slot = ?').get(saveId, slot);
+    }
     const enemy = ENEMY_TIERS[tier];
     // The fight starts from the health the hero has now, after any regeneration.
     const { hp: startHp, maxHp } = syncHp(db, saveId);
@@ -190,8 +215,12 @@ export function heroAttack(
     if (enemyHp === 0) {
       endFight(db, fight.id, 'won');
       setHp(db, saveId, fight.hero_hp);
-      grantItem(db, saveId, { source: 'fight', fightId: fight.id });
-      knockOut(db, saveId, fight.npc_slot);
+      // Only a real person drops the fight item and is knocked out. What an improvised enemy leaves behind
+      // is the Master's call, through the reward commands.
+      if (fight.npc_slot !== null) {
+        grantItem(db, saveId, { source: 'fight', fightId: fight.id });
+        knockOut(db, saveId, fight.npc_slot);
+      }
       clearWarnings(db, fight);
       const kind = fight.aggressor === 'npc' ? 'kill_self_defense' : 'kill_unprovoked';
       const honor = applyHonorRule(db, saveId, kind, `defeated ${fight.enemy_name}`);

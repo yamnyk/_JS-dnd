@@ -76,7 +76,7 @@ const USAGE = `Commands:
   npc warn <slot> ["<reason>"]
   npc invent "<name>" "<description>" "<voice>" | npc list
   reward gold <n> "<reason>" [--task <id>] | reward item "<name>" "<reason>" [--task <id>] | reward list
-  fight begin --npc <slot> --tier <weak|normal|tough> --aggressor <hero|npc> [--quest <id>]
+  fight begin (--npc <slot> | --improv "<name>") --tier <weak|normal|tough> --aggressor <hero|npc> [--quest <id>]
   fight attack | fight flee | fight state
   move propose --data -   (problem JSON on stdin) | move check <moveId>
   quest list [all] | quest start <id> | quest check <id> | quest progress
@@ -158,6 +158,7 @@ const VALUE_OPTIONS = new Set([
   '--tier',
   '--aggressor',
   '--quest',
+  '--improv',
   '--task',
 ]);
 
@@ -168,7 +169,7 @@ const ALLOWED_FLAGS = {
   'hero create': ['name', 'race', 'class', 'scores', 'bonuses', 'race-desc', 'class-desc'],
   'world setting': ['source', 'name', 'desc', 'voice'],
   'world fill': ['data'],
-  'fight begin': ['npc', 'tier', 'aggressor', 'quest'],
+  'fight begin': ['npc', 'improv', 'tier', 'aggressor', 'quest'],
   'reward gold': ['task'],
   'reward item': ['task'],
   'move propose': ['data'],
@@ -456,11 +457,18 @@ function main() {
       } else if (sub === 'show') {
         out({ ok: true, log: getFightLog(db, toInt(need(rest[0], 'fightId'), 'fightId')) });
       } else if (sub === 'begin') {
-        arity(rest, 0, 0, 'fight begin --npc <slot> --tier <weak|normal|tough> --aggressor <hero|npc> [--quest <id>]');
+        arity(
+          rest,
+          0,
+          0,
+          'fight begin (--npc <slot> | --improv "<name>") --tier <weak|normal|tough> --aggressor <hero|npc> [--quest <id>]',
+        );
+        if ((flags.npc === undefined) === (flags.improv === undefined))
+          fail('Give exactly one of --npc <slot> and --improv "<name>".');
         out({
           ok: true,
           fight: beginFight(db, currentSaveId(), {
-            npcSlot: need(flags.npc, '--npc'),
+            ...(flags.improv === undefined ? { npcSlot: flags.npc } : { improv: { name: flags.improv } }),
             tier: need(flags.tier, '--tier'),
             aggressor: need(flags.aggressor, '--aggressor'),
             questId: flags.quest ?? null,

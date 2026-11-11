@@ -478,3 +478,13 @@ test('the brief tells the Master how to hand out rewards for invented things, an
   const usage = readFileSync(join(root, 'game', 'cli-main.js'), 'utf8');
   assert.ok(usage.includes('reward gold') && usage.includes('reward item'));
 });
+
+test('the brief teaches improvised fights: the command, the rules that differ, and that the Master rewards a win', () => {
+  assert.ok(combatFile.includes('node game/cli.js fight begin --improv'));
+  assert.match(combatFile, /improvised/i);
+  assert.match(combatFile, /nobody is knocked out/i);
+  assert.match(combatFile, /reward/);
+  assert.match(combatFile, /detour/);
+  const beyond = skill.slice(skill.indexOf('## Beyond the map'), skill.indexOf('## Read when it comes up'));
+  assert.ok(beyond.includes('fight begin --improv'));
+});
