@@ -8,6 +8,7 @@ import { getFightState } from './fight-state.js';
 import { currentStamina } from './stamina.js';
 import { readVitals } from './vitals.js';
 import { countItems } from './inventory.js';
+import { openTasksSummary } from './side-tasks.js';
 import { displayName } from './rules.js';
 import { effectiveLanguage, getLanguage, packFor } from './i18n.js';
 
@@ -46,6 +47,7 @@ export function resumeState(db, saveId) {
     setting: getSetting(db, saveId),
     here: hero && world.complete ? look(db, saveId) : null,
     quests: questsPart(getProgress(db, saveId)),
+    tasks: openTasksSummary(db, saveId),
     fight: getFightState(db, saveId),
     honor: getHonor(db, saveId),
     stamina: { band, collapsed, mental, ...(collapsed ? { hours } : {}) },
@@ -58,7 +60,7 @@ export function resumeState(db, saveId) {
 // One short line per player prompt, so the Master does not spend a tool call to recheck the basics.
 // Null until the hero and the world exist.
 export function stateLine(db, saveId) {
-  const { hero, here, quests, fight, honor, stamina, vitals } = resumeState(db, saveId);
+  const { hero, here, quests, tasks, fight, honor, stamina, vitals } = resumeState(db, saveId);
   if (!hero || !here) return null;
   // The labels are English in every language: the Master reads this line, the player never does.
   const parts = [
@@ -75,6 +77,7 @@ export function stateLine(db, saveId) {
           ? 'all solved'
           : 'road ahead still being built'
     }`,
+    ...(tasks.open ? [`${tasks.open} open errands`] : []),
     fight
       ? `fight: hero ${fight.hero.hp}/${fight.hero.hpMax} HP vs ${fight.enemy.name} ${fight.enemy.hp}/${fight.enemy.hpMax} HP`
       : 'no fight',

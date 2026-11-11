@@ -432,7 +432,7 @@ test('the brief tells the Master the map is the spine, not a limit, and how to s
   assert.ok(section.includes('node game/cli.js detour leave'));
   assert.ok(section.includes('node game/cli.js detour show'));
   assert.match(section, /go <exit>/);
-  assert.match(section, /never invent a quest that counts/i);
+  assert.match(section, /counts as a quest/i);
   assert.match(section, /spaceship/i);
 });
 
@@ -460,7 +460,7 @@ test('the brief tells the Master to save every person it invents, and talk to th
   assert.match(section, /strangers/);
   assert.match(section, /npc list/);
   assert.doesNotMatch(section, /people you invent and errands you hand out inside a place are narration only/);
-  assert.match(section, /errands/i);
+  assert.match(section, /errand/i);
 });
 
 test('every command the Beyond the map section names exists in the CLI usage text', () => {
@@ -487,4 +487,14 @@ test('the brief teaches improvised fights: the command, the rules that differ, a
   assert.match(combatFile, /detour/);
   const beyond = skill.slice(skill.indexOf('## Beyond the map'), skill.indexOf('## Read when it comes up'));
   assert.ok(beyond.includes('fight begin --improv'));
+});
+
+test('the brief has the Master save errands with side add story, close them, and keep them out of the ladder', () => {
+  const beyond = skill.slice(skill.indexOf('## Beyond the map'), skill.indexOf('## Read when it comes up'));
+  assert.ok(beyond.includes('node game/cli.js side add story'));
+  assert.match(beyond, /side done/);
+  assert.match(beyond, /side drop/);
+  assert.match(beyond, /side list/);
+  assert.doesNotMatch(beyond, /narration only/i);
+  assert.match(beyond, /never.*(open a rung|count)/is);
 });

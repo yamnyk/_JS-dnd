@@ -3,6 +3,7 @@ import { getHero } from './hero.js';
 import { worldStatus } from './world-status.js';
 import { effectiveLanguage } from './i18n.js';
 import { LIMITS, checkName, checkText, assertRoom } from './improv.js';
+import { tasksInDetour } from './side-tasks.js';
 
 // Places the Master invents on the go. The hero keeps a real map place (heroes.location_slot) and gets a
 // detour_id while off the map, so everything keyed on the six places (rest, quests, the status bar) keeps
@@ -41,7 +42,8 @@ export function currentDetour(db, saveId) {
   const row = db
     .prepare('SELECT d.* FROM heroes h JOIN detours d ON d.id = h.detour_id WHERE h.save_id = ?')
     .get(saveId);
-  return shape(db, saveId, row);
+  const here = shape(db, saveId, row);
+  return here && { ...here, tasks: tasksInDetour(db, saveId, here.id) };
 }
 
 export function listDetours(db, saveId) {

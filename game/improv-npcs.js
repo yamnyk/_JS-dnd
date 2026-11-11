@@ -3,6 +3,7 @@ import { getHero } from './hero.js';
 import { worldStatus } from './world-status.js';
 import { effectiveLanguage } from './i18n.js';
 import { LIMITS, checkName, checkText, assertRoom } from './improv.js';
+import { tasksOfNpc } from './side-tasks.js';
 
 // People the Master invents on the go. A person stands at a map place (base_slot), and in a detour when
 // detour_id is set. They are scenery and conversation: they hold no quests, and what they give is the
@@ -90,5 +91,6 @@ export function talkToInvented(db, saveId, hero, name) {
     npc: { slot: null, name: row.name, description: row.description, voice: row.voice, improvised: true },
     offer: null,
     open: [],
+    tasks: tasksOfNpc(db, saveId, row.id),
   };
 }

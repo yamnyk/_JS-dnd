@@ -55,6 +55,7 @@ import { readVitals, restHero } from './vitals.js';
 import { enterDetour, leaveDetour, currentDetour, listDetours } from './detours.js';
 import { inventNpc, listNpcs, npcsHere } from './improv-npcs.js';
 import { grantGold, grantRewardItem, listRewards } from './rewards.js';
+import { addStoryTask, listTasks, finishTask, dropTask } from './side-tasks.js';
 import { listItems, countItems, nameItem } from './inventory.js';
 import { resumeState } from './resume.js';
 
@@ -76,6 +77,7 @@ const USAGE = `Commands:
   npc warn <slot> ["<reason>"]
   npc invent "<name>" "<description>" "<voice>" | npc list
   reward gold <n> "<reason>" [--task <id>] | reward item "<name>" "<reason>" [--task <id>] | reward list
+  side add story "<title>" "<brief>" [--giver "<name>"] | side list [all] | side done <id> | side drop <id>
   fight begin (--npc <slot> | --improv "<name>") --tier <weak|normal|tough> --aggressor <hero|npc> [--quest <id>]
   fight attack | fight flee | fight state
   move propose --data -   (problem JSON on stdin) | move check <moveId>
@@ -100,6 +102,9 @@ const BLOCKED_WHEN_COLLAPSED = new Set([
   'npc invent',
   'reward gold',
   'reward item',
+  'side add',
+  'side done',
+  'side drop',
   'honor add',
   'honor event',
   'fight start',
@@ -160,6 +165,7 @@ const VALUE_OPTIONS = new Set([
   '--quest',
   '--improv',
   '--task',
+  '--giver',
 ]);
 
 // Which options each command accepts. Anything else is rejected, never silently ignored.
@@ -170,6 +176,7 @@ const ALLOWED_FLAGS = {
   'world setting': ['source', 'name', 'desc', 'voice'],
   'world fill': ['data'],
   'fight begin': ['npc', 'improv', 'tier', 'aggressor', 'quest'],
+  'side add': ['giver'],
   'reward gold': ['task'],
   'reward item': ['task'],
   'move propose': ['data'],
@@ -484,6 +491,22 @@ function main() {
       } else if (sub === 'state') {
         arity(rest, 0, 0, 'fight state');
         out({ ok: true, fight: getFightState(db, currentSaveId()) });
+      } else fail(USAGE);
+      break;
+    }
+    case 'side': {
+      if (sub === 'add') {
+        arity(rest, 3, 3, 'side add story "<title>" "<brief>" [--giver "<name>"]');
+        if (rest[0] !== 'story') fail('Only story tasks are added this way: side add story "<title>" "<brief>".');
+        out({ ok: true, ...addStoryTask(db, currentSaveId(), { title: rest[1], brief: rest[2], giver: flags.giver }) });
+      } else if (sub === 'list') {
+        arity(rest, 0, 1, 'side list [all]');
+        if (rest[0] !== undefined && rest[0] !== 'all') fail('side list [all]');
+        out({ ok: true, tasks: listTasks(db, currentSaveId(), { all: rest[0] === 'all' }) });
+      } else if (sub === 'done' || sub === 'drop') {
+        arity(rest, 1, 1, `side ${sub} <id>`);
+        const act = sub === 'done' ? finishTask : dropTask;
+        out({ ok: true, ...act(db, currentSaveId(), toInt(rest[0], 'id')) });
       } else fail(USAGE);
       break;
     }

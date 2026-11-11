@@ -1594,3 +1594,87 @@ test('fight begin takes exactly one of --npc and --improv, and still needs tier 
   }
   assert.equal(game.run('fight', 'state').json.fight, null);
 });
+
+test('side add story, list, done and drop run an errand from start to finish, with its giver shown by talk', () => {
+  const game = readyGame();
+  assert.equal(game.run('npc', 'invent', 'Cook Marta', 'Round and loud.', 'Shouts kindly.').status, 0);
+  const added = game.run(
+    'side',
+    'add',
+    'story',
+    'Find the lost ladle',
+    'It is somewhere in the market.',
+    '--giver',
+    'Cook Marta',
+  );
+  assert.equal(added.status, 0, added.stderr);
+  assert.deepEqual(
+    [added.json.task.kind, added.json.task.status, added.json.task.giver],
+    ['story', 'open', 'Cook Marta'],
+  );
+  const id = String(added.json.task.id);
+  assert.deepEqual(
+    game.run('talk', 'Cook Marta').json.tasks.map((t) => t.title),
+    ['Find the lost ladle'],
+  );
+  assert.equal(game.run('resume').json.tasks.open, 1);
+  assert.equal(game.run('side', 'list').json.tasks.length, 1);
+  assert.equal(game.run('side', 'done', id).json.task.status, 'done');
+  assert.equal(game.run('side', 'list').json.tasks.length, 0);
+  assert.deepEqual(
+    game.run('side', 'list', 'all').json.tasks.map((t) => t.status),
+    ['done'],
+  );
+  const second = game.run('side', 'add', 'story', 'Hem the cloak', 'Before dusk.');
+  assert.equal(game.run('side', 'drop', String(second.json.task.id)).json.task.status, 'dropped');
+});
+
+test('side commands check their arguments and refuse what the scripts refuse', () => {
+  const game = readyGame();
+  for (const args of [
+    ['side'],
+    ['side', 'add'],
+    ['side', 'add', 'story'],
+    ['side', 'add', 'story', 'Only a title'],
+    ['side', 'add', 'quest', 'A', 'B'],
+    ['side', 'add', 'story', 'A', 'B', '--giver', 'Nobody'],
+    ['side', 'add', 'story', '', 'B'],
+    ['side', 'done'],
+    ['side', 'done', 'x'],
+    ['side', 'done', '99'],
+    ['side', 'drop', '99'],
+    ['side', 'list', 'closed'],
+    ['side', 'finish', '1'],
+  ]) {
+    assert.equal(game.run(...args).status, 1, args.join(' '));
+  }
+  assert.equal(game.run('side', 'list', 'all').json.tasks.length, 0);
+});
+
+test('a collapsed hero cannot add, finish or drop a task, but can still list them', () => {
+  const game = readyGame();
+  const task = game.run('side', 'add', 'story', 'A', 'B').json.task;
+  setReading(game, 99, 100);
+  for (const args of [
+    ['side', 'add', 'story', 'C', 'D'],
+    ['side', 'done', String(task.id)],
+    ['side', 'drop', String(task.id)],
+  ]) {
+    const result = game.run(...args);
+    assert.equal(result.status, 1, args.join(' '));
+    assert.equal(JSON.parse(result.stderr.trim()).collapsed, true, args.join(' '));
+  }
+  assert.equal(game.run('side', 'list').status, 0);
+});
+
+test('detour show lists the open tasks of the detour, and the usage text knows the side commands', () => {
+  const game = readyGame();
+  game.run('detour', 'enter', 'The Cave', 'Dark.');
+  game.run('side', 'add', 'story', 'Light the lamp', 'Find the oil.');
+  assert.deepEqual(
+    game.run('detour', 'show').json.detour.tasks.map((t) => t.title),
+    ['Light the lamp'],
+  );
+  const usage = game.run().stderr;
+  for (const text of ['side add story', 'side list', 'side done', 'side drop']) assert.ok(usage.includes(text), text);
+});
