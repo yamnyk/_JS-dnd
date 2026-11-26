@@ -31,13 +31,21 @@ if [ -n "$VERSION" ] && older_than "$VERSION" "$MIN_VERSION"; then
   echo "Claude Code $VERSION is older than $MIN_VERSION, the oldest version this game supports. It may cost more tokens or miss features. Update Claude Code if anything looks off." >&2
 fi
 
-# --tts turns on voice mode: NPC speech is read aloud by tts/speak.js (install it with: bash setup.sh --tts).
+# --tts turns on voice mode and keeps it on: NPC speech is read aloud by tts/speak.js (install it with:
+# bash setup.sh --tts, turn it off with: node tts/speak.js --off).
 # The flag is ours, so it is taken out of the arguments that go to Claude Code.
 TTS=""
 PASS=()
 for arg in "$@"; do
   if [ "$arg" = "--tts" ]; then TTS=1; else PASS+=("$arg"); fi
 done
+
+# Voice mode is on with --tts, or while the marker file exists (node tts/speak.js --on and --off).
+MARKER="${JSDND_TTS_MARKER:-$HERE/tts/.enabled}"
+if [ -n "$TTS" ] && [ ! -f "$MARKER" ]; then
+  node "$HERE/tts/speak.js" --on >/dev/null 2>&1 || true
+fi
+if [ -f "$MARKER" ]; then TTS=1; fi
 
 ALLOW=("Bash(node game/cli.js *)")
 VOICE=()

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { copyFileSync, mkdtempSync } from 'node:fs';
+import { copyFileSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -20,6 +20,7 @@ function install({ ready = true } = {}) {
     ...process.env,
     JSDND_GAME_DB: join(dir, 'game.db'),
     JSDND_SKIP_UPDATE_CHECK: '1',
+    JSDND_TTS_MARKER: join(dir, 'tts-enabled'),
     JSDND_DICE_PATH: join(dir, 'dice.js'),
     JSDND_ROLLS_PATH: join(dir, 'rolls.js'),
     JSDND_DICE_SEAL: join(dir, 'dice.sha256'),
@@ -98,4 +99,17 @@ test('resume never exits non-zero, so it cannot abort the /play skill', () => {
   const { cli } = install();
   assert.equal(cli('resume', 'extra').status, 0);
   assert.equal(JSON.parse(cli('resume', 'extra').stdout).ok, false);
+});
+
+test('while voice mode is on, each prompt and a compaction carry the voice reminder, and not otherwise', () => {
+  const { env, hook } = install();
+  hook(prompt('game', '/play'));
+  assert.doesNotMatch(hook(prompt('game', 'hello')).stdout, /\[voice on\]/);
+  writeFileSync(env.JSDND_TTS_MARKER, 'on\n');
+  const out = hook(prompt('game', 'hello')).stdout;
+  assert.match(out, /^\[game\] .*\n\[voice on\] .*node tts\/speak\.js <f\|m>/);
+  assert.equal(out.trim().split('\n').length, 2);
+  const compact = hook({ session_id: 'game', hook_event_name: 'SessionStart', source: 'compact' }).stdout;
+  assert.match(compact, /\[voice on\]/);
+  assert.equal(hook(prompt('dev-session', 'fix it')).stdout, '', 'a session that never ran /play gets nothing');
 });

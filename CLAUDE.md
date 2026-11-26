@@ -34,7 +34,7 @@ A D&D-style adventure played in the terminal where every quest is a JS task. Pub
 ## Voices (optional)
 
 - `bash setup.sh --tts` installs Piper into `tts/.venv` and the voice models into `tts/models/` (both gitignored). Versions and checksums are pinned in `tts/requirements.txt` and `tts/models.txt`: change them there, never by hand in the venv. Nothing downloads without the flag.
-- `bash play.sh --tts` adds `tts/master-note.txt` to the Master's system prompt and allows `node tts/speak.js *` for that launch only. The `play` skill brief is untouched, so players without voices pay no tokens for it.
+- Voice mode is the marker file `tts/.enabled` (gitignored): `bash setup.sh --tts` creates it, `node tts/speak.js --on|--off|--status` switches it. While it exists `game/play-hook.js` adds a one-line `[voice on]` reminder to every prompt of a `/play` session and after a compaction (it only checks that the file exists), so resumed and long sessions do not forget. `bash play.sh --tts` (or the marker) also adds `tts/master-note.txt` to the system prompt and allows `node tts/speak.js *` for that launch only. The `play` skill brief is untouched, so players without voices pay no tokens for any of it.
 - `node tts/speak.js --skip` stops the speaking line and clears the queue. The player can run it with `!` in Claude Code, which costs no model turn.
 - `tts/speak.js` returns at once, queues the sound, and picks the speaker from the NPC's gender (`f` or `m`) and name. The uk_UA model knows only lowercase letters and a plain apostrophe, so `prepareText` lowercases and normalizes. Only Ukrainian has a voice for now.
 

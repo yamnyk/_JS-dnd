@@ -23,7 +23,7 @@ function stubClaude(version) {
 
 const play = (bin, ...args) =>
   spawnSync('/bin/bash', [join(root, 'play.sh'), ...args], {
-    env: { ...process.env, PATH: `${bin}:/usr/bin:/bin` },
+    env: { ...process.env, PATH: `${bin}:/usr/bin:/bin`, JSDND_TTS_MARKER: join(bin, 'no-voice-marker') },
     encoding: 'utf8',
   });
 
@@ -134,4 +134,18 @@ test('without --tts the speak command is never allowed', () => {
   const stub = stubClaude('2.1.311 (Claude Code)');
   play(stub.bin);
   assert.ok(!stub.argv().includes(SPEAK_ALLOW));
+});
+
+test('an existing voice marker turns voice mode on without the flag', () => {
+  const stub = stubClaude('2.1.311 (Claude Code)');
+  const marker = join(stub.bin, 'marker');
+  writeFileSync(marker, 'on\n');
+  const result = spawnSync('/bin/bash', [join(root, 'play.sh')], {
+    env: { ...process.env, PATH: `${stub.bin}:/usr/bin:/bin`, JSDND_TTS_MARKER: marker },
+    encoding: 'utf8',
+  });
+  assert.equal(result.status, 0, result.stderr);
+  const argv = stub.argv();
+  assert.ok(argv.includes(SPEAK_ALLOW));
+  assert.ok(argv.includes('--append-system-prompt'));
 });

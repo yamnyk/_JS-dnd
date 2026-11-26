@@ -18,6 +18,9 @@ import {
 process.env.JSDND_I18N_STRICT = '1';
 // The real hook asks the remote for new commits when a session starts. Tests must never go to the network.
 process.env.JSDND_SKIP_UPDATE_CHECK = '1';
+// Voice mode is a marker file in the checkout. A developer who has it switched on must not see the voice
+// reminder in other tests' hook output.
+process.env.JSDND_TTS_MARKER = join(tmpdir(), 'jsdnd-tests-no-voice-marker');
 
 export const freshDb = () => openGameDb(join(mkdtempSync(join(tmpdir(), 'jsdnd-game-')), 'game.db'));
 

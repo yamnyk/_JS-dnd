@@ -160,8 +160,9 @@ Developers who change a sealed file on purpose (`game/dice.js` or `game/rolls.js
 For a streamer, or anyone who likes to hear the cast. It is optional and local: no account, no cloud service, no cost.
 
 1. Run `bash setup.sh --tts` once. It installs [Piper](https://github.com/OHF-Voice/piper1-gpl) into `tts/.venv` and the Ukrainian voice `uk_UA-ukrainian_tts-medium` (3 speakers, CC0 dataset) into `tts/models/`. Both are gitignored, and the exact versions and checksums are pinned in `tts/requirements.txt` and `tts/models.txt`, so any clone gets the same voices.
-2. Start the game with `bash play.sh --tts`. The Master still writes every NPC line in the feed, and also reads it aloud by running `node tts/speak.js <f|m> "<NPC name>" -`. Narration and the Master's own lines are never read: on stream you voice the Master yourself.
-3. Feminine NPCs get one of two female speakers, masculine NPCs get the male one, and a small pace change per name keeps people apart. The same name always sounds the same.
+2. Voice mode is now on, and it stays on (a gitignored marker file, `tts/.enabled`), so it also works in a resumed session and when you start `/play` from the desktop app. While it is on, every message in a `/play` session carries a short reminder for the Master. Switch it with `node tts/speak.js --off`, `--on`, or `--status`. `bash play.sh --tts` also turns it on and pre-approves the speak command for that launch.
+3. In `/play`, The Master still writes every NPC line in the feed, and also reads it aloud by running `node tts/speak.js <f|m> "<NPC name>" -`. Narration and the Master's own lines are never read: on stream you voice the Master yourself.
+4. Feminine NPCs get one of two female speakers, masculine NPCs get the male one, and a small pace change per name keeps people apart. The same name always sounds the same.
 
 **To skip speech** that is playing (and every line queued behind it), run `node tts/speak.js --skip`. In Claude Code type `!node tts/speak.js --skip`: the `!` runs it as a shell command right away, without a model turn, so it costs nothing and works while the Master is still talking. From a second terminal it works the same.
 

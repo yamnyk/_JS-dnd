@@ -133,6 +133,24 @@ test('--skip throws away every waiting line and says how many', () => {
   assert.deepEqual(readdirSync(queue), []);
 });
 
+test('--on, --off and --status switch voice mode through the marker file', () => {
+  const marker = join(mkdtempSync(join(tmpdir(), 'jsdnd-tts-')), 'enabled');
+  const env = { JSDND_TTS_MARKER: marker };
+  assert.equal(JSON.parse(speak(['--status'], env).stdout).voice, 'off');
+  assert.equal(existsSync(marker), false);
+  const on = speak(['--on'], env);
+  if (JSON.parse(speak(['--status'], env).stdout).installed) {
+    assert.equal(JSON.parse(on.stdout).voice, 'on');
+    assert.ok(existsSync(marker));
+    assert.equal(JSON.parse(speak(['--off'], env).stdout).voice, 'off');
+    assert.equal(existsSync(marker), false);
+  } else {
+    assert.equal(on.status, 1);
+    assert.match(on.stderr, /bash setup\.sh --tts/);
+    assert.equal(existsSync(marker), false, 'voice mode cannot be on without voices');
+  }
+});
+
 test('--skip with nothing queued is harmless', () => {
   const result = speak(['--skip'], { JSDND_TTS_QUEUE: join(tmpdir(), 'jsdnd-tts-never-made') });
   assert.equal(result.status, 0, result.stderr);

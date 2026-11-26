@@ -59,9 +59,9 @@ HELP
     uk:tts_hint)
       echo "Гра працює і без них. Виправ проблему і запусти bash setup.sh --tts ще раз." ;;
     en:tts_done)
-      echo "Voices installed. Start the game with bash play.sh --tts to hear the NPCs." ;;
+      echo "Voices installed and switched on: the NPCs are read aloud in /play. Turn it off with node tts/speak.js --off." ;;
     uk:tts_done)
-      echo "Голоси встановлено. Запусти гру через bash play.sh --tts, щоб чути NPC." ;;
+      echo "Голоси встановлено й увімкнено: у /play NPC озвучуються. Вимкнути можна командою node tts/speak.js --off." ;;
     en:init_failed)
       echo "Could not create the game database. The game said:" ;;
     uk:init_failed)

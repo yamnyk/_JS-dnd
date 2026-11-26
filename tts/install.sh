@@ -32,4 +32,5 @@ while read -r file sum url; do
   fi
   mv "$target.part" "$target"
 done < "$HERE/models.txt"
+touch "$HERE/.enabled"
 echo "Voices installed in $HERE"

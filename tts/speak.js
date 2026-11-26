@@ -1,5 +1,6 @@
 // Reads an NPC's speech aloud with Piper, for a streamer who shows the feed and wants it heard too.
 // Usage: node tts/speak.js <f|m> "<NPC name>" "<speech>"     (a speech of "-" is read from stdin)
+//        node tts/speak.js --on | --off | --status          (voice mode for /play sessions, kept in tts/.enabled)
 //        node tts/speak.js --skip                           (stops the speech and clears the queue)
 //
 // The call returns at once. A background job makes the sound, and jobs wait in a queue so two
@@ -15,6 +16,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const PYTHON = join(HERE, '.venv', 'bin', 'python');
 const QUEUE = process.env.JSDND_TTS_QUEUE || join(tmpdir(), 'jsdnd-tts-queue');
 const ACTIVE = join(QUEUE, 'active.pid');
+const MARKER = process.env.JSDND_TTS_MARKER || join(HERE, '.enabled');
 const STALE_MS = 10 * 60 * 1000;
 
 // Speaker ids of uk_UA-ukrainian_tts-medium: 0 lada, 1 mykyta, 2 tetiana.
@@ -150,6 +152,16 @@ function fail(message) {
 
 async function main(argv) {
   if (argv[0] === '--job') return runJob(argv[1]);
+  if (['--on', '--off', '--status'].includes(argv[0])) {
+    const installed = existsSync(PYTHON) && existsSync(join(HERE, 'models', VOICES.uk.model));
+    if (argv[0] === '--on') {
+      if (!installed) fail('The voices are not installed. Run: bash setup.sh --tts');
+      writeFileSync(MARKER, 'on\n');
+    }
+    if (argv[0] === '--off') rmSync(MARKER, { force: true });
+    console.log(JSON.stringify({ voice: existsSync(MARKER) ? 'on' : 'off', installed }));
+    return;
+  }
   if (argv[0] === '--skip') {
     console.log(JSON.stringify({ skipped: skipAll() }));
     return;

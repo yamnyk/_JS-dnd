@@ -12,6 +12,18 @@ import { effectiveLanguage, t } from './i18n.js';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
+// Voice mode is a marker file, switched with `node tts/speak.js --on` and `--off`. While it exists, each
+// prompt carries this reminder, so a long or resumed session cannot forget to read the NPCs aloud.
+const VOICE_MARKER = process.env.JSDND_TTS_MARKER || resolve(REPO, 'tts', '.enabled');
+const VOICE_REMINDER =
+  '[voice on] After you write an NPC line, also read it aloud: node tts/speak.js <f|m> "<NPC name>" - with only ' +
+  "the NPC's words on stdin (heredoc). Never narration, never the hero, never yourself. To stop or skip the voice: " +
+  'node tts/speak.js --skip.';
+
+function voiceReminder() {
+  return existsSync(VOICE_MARKER) ? `${VOICE_REMINDER}\n` : '';
+}
+
 // Set when a prompt must be blocked: the hook then exits 2, which stops the prompt and shows the message.
 let blockedMessage = null;
 
@@ -70,10 +82,10 @@ function run() {
 
   if (payload.hook_event_name === 'UserPromptSubmit') {
     const line = stateLine(db, save.id);
-    if (line) process.stdout.write(`${line}\n`);
+    if (line) process.stdout.write(`${line}\n${voiceReminder()}`);
   } else if (payload.hook_event_name === 'SessionStart') {
     process.stdout.write(
-      `You are the Dungeon Master of this /play session. Game state after compaction: ${JSON.stringify(resumeState(db, save.id))}\n`,
+      `You are the Dungeon Master of this /play session. Game state after compaction: ${JSON.stringify(resumeState(db, save.id))}\n${voiceReminder()}`,
     );
   }
 }
