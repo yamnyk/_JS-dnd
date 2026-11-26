@@ -3,3 +3,5 @@ data/
 player/
 node_modules/
 .playwright-mcp/
+tts/.venv/
+tts/models/

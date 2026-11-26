@@ -112,3 +112,26 @@ test('play.sh calls 2.1.271 the oldest supported version, never the tested one',
   assert.match(warning, /oldest/i);
   assert.doesNotMatch(warning, /tested/i);
 });
+
+const SPEAK_ALLOW = 'Bash(node tts/speak.js *)';
+
+test('--tts adds the voice note and the speak command to this launch only, and is not passed on', () => {
+  const stub = stubClaude('2.1.311 (Claude Code)');
+  const result = play(stub.bin, '--tts', '--continue');
+  assert.equal(result.status, 0, result.stderr);
+  const argv = stub.argv();
+  assert.equal(argv[0], '/play');
+  assert.ok(!argv.includes('--tts'), 'the flag belongs to play.sh, not to Claude Code');
+  assert.equal(argv.at(-1), '--continue');
+  const allowAt = argv.indexOf('--allowedTools');
+  assert.deepEqual(argv.slice(allowAt + 1, allowAt + 3), [ALLOW, SPEAK_ALLOW]);
+  const noteAt = argv.indexOf('--append-system-prompt');
+  assert.ok(noteAt > 0 && noteAt < allowAt, 'the note goes before the allow list');
+  assert.match(argv.slice(noteAt + 1).join('\n'), /node tts\/speak\.js <f\|m>/);
+});
+
+test('without --tts the speak command is never allowed', () => {
+  const stub = stubClaude('2.1.311 (Claude Code)');
+  play(stub.bin);
+  assert.ok(!stub.argv().includes(SPEAK_ALLOW));
+});

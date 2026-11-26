@@ -3,6 +3,13 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# --tts also installs the optional voices that read NPC speech aloud (Piper and one Ukrainian voice, about
+# 300 MB with its packages). Without the flag nothing is downloaded for them.
+WITH_TTS=""
+for arg in "$@"; do
+  case "$arg" in --tts) WITH_TTS=1 ;; esac
+done
+
 # Every message the script prints is in this table, in English and in Ukrainian, one "language:key" line
 # each. A test checks that both languages have every key and the same commands, files, and links.
 say() {
@@ -43,6 +50,18 @@ HELP
       echo "npm was not found, so the style check will be skipped. Install npm and run npm install in the game folder to turn it on." ;;
     uk:npm_missing)
       echo "npm не знайдено, тому перевірку стилю буде пропущено. Встанови npm і виконай npm install у теці гри, щоб увімкнути її." ;;
+    en:tts_failed)
+      echo "Could not install the voices, so NPC speech will not be read aloud. The installer said:" ;;
+    uk:tts_failed)
+      echo "Не вдалося встановити голоси, тому репліки NPC не озвучуватимуться. Інсталятор повідомив:" ;;
+    en:tts_hint)
+      echo "The game plays without them. Fix the problem and run bash setup.sh --tts again." ;;
+    uk:tts_hint)
+      echo "Гра працює і без них. Виправ проблему і запусти bash setup.sh --tts ще раз." ;;
+    en:tts_done)
+      echo "Voices installed. Start the game with bash play.sh --tts to hear the NPCs." ;;
+    uk:tts_done)
+      echo "Голоси встановлено. Запусти гру через bash play.sh --tts, щоб чути NPC." ;;
     en:init_failed)
       echo "Could not create the game database. The game said:" ;;
     uk:init_failed)
@@ -104,6 +123,17 @@ if [ ! -x "$HERE/node_modules/.bin/prettier" ]; then
     fi
   else
     say npm_missing >&2
+  fi
+fi
+
+# The voices are optional: a failed install is reported and the game plays without them.
+if [ -n "$WITH_TTS" ]; then
+  if TTS_OUTPUT="$(bash "$HERE/tts/install.sh" 2>&1)"; then
+    say tts_done
+  else
+    say tts_failed >&2
+    echo "$TTS_OUTPUT" >&2
+    say tts_hint >&2
   fi
 fi
 

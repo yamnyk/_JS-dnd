@@ -9,6 +9,10 @@ Rules to hold the text to:
 - No em-dash or en-dash.
 - Code, file names, and commands stay English.
 
+## `setup.sh`
+
+- [ ] `tts_failed`, `tts_hint`, `tts_done` : the three messages of the optional voice install (`bash setup.sh --tts`), and the voice paragraph at the end of `README.uk.md`.
+
 ## `game/locales/uk.js`
 
 - [ ] `language.` : the language switch confirmation.

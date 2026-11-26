@@ -43,6 +43,7 @@ Never edit `game/dice.js` or `game/rolls.js`. The game fingerprints both, and a 
 | AI host            | Claude Code (first)        | Built-in choice prompts drive most turns. Gemini, Grok, and local models come later.                                           |
 | Tracking           | GitHub Issues and Projects | Board "JS D&D" on this repo, driven through the `gh` CLI.                                                                      |
 | Tests              | `node:test`                | No test framework to install.                                                                                                  |
+| Voices (optional)  | Piper, one Ukrainian voice | `bash setup.sh --tts` installs a local text-to-speech engine into `tts/.venv` (pinned in `tts/requirements.txt`) and a voice model into `tts/models/` (pinned by checksum in `tts/models.txt`). It needs Python 3.9 or newer and about 300 MB. Nothing is installed without the flag. |
 | Code style         | Prettier and ESLint        | Dev dependencies, installed by `setup.sh`. They check this repo and the style of the player's quest files. The game plays without them. |
 
 Game state lives only in SQLite, reached through scripts, never in JSON or markdown files. That keeps token use low so a player gets more play out of one usage window.
@@ -106,6 +107,8 @@ Each plan has an epic issue on the board: [Plan 2](https://github.com/yamnyk/_JS
 ```bash
 bash setup.sh        # checks Node and node:sqlite, creates the game DB in data/
 bash play.sh         # starts Claude Code on Sonnet, approves the game commands for this launch only, runs /play
+bash setup.sh --tts  # also installs the optional voices (Piper), see "Reading NPC speech aloud"
+bash play.sh --tts   # like play.sh, and the NPCs are read aloud
 node --test          # runs the test suite
 npm run lint         # ESLint
 npm run format       # Prettier, writes the fixes
@@ -152,6 +155,18 @@ Developers who change a sealed file on purpose (`game/dice.js` or `game/rolls.js
 
 `node dev/cli.js board-config yamnyk 3` points the dev tooling at the GitHub board. The dev notes DB lives in `.dev/` and is not committed.
 
+## Reading NPC speech aloud
+
+For a streamer, or anyone who likes to hear the cast. It is optional and local: no account, no cloud service, no cost.
+
+1. Run `bash setup.sh --tts` once. It installs [Piper](https://github.com/OHF-Voice/piper1-gpl) into `tts/.venv` and the Ukrainian voice `uk_UA-ukrainian_tts-medium` (3 speakers, CC0 dataset) into `tts/models/`. Both are gitignored, and the exact versions and checksums are pinned in `tts/requirements.txt` and `tts/models.txt`, so any clone gets the same voices.
+2. Start the game with `bash play.sh --tts`. The Master still writes every NPC line in the feed, and also reads it aloud by running `node tts/speak.js <f|m> "<NPC name>" -`. Narration and the Master's own lines are never read: on stream you voice the Master yourself.
+3. Feminine NPCs get one of two female speakers, masculine NPCs get the male one, and a small pace change per name keeps people apart. The same name always sounds the same.
+
+**To skip speech** that is playing (and every line queued behind it), run `node tts/speak.js --skip`. In Claude Code type `!node tts/speak.js --skip`: the `!` runs it as a shell command right away, without a model turn, so it costs nothing and works while the Master is still talking. From a second terminal it works the same.
+
+Only Ukrainian speech has a voice for now. Lines are queued, so two never overlap. To route the sound into OBS on macOS, capture desktop audio or use a loopback device. You can also try a line yourself: `node tts/speak.js f "Мирослава" "Добрий вечір, подорожню."`.
+
 ## Languages
 
 The game is played in English or Ukrainian. The language belongs to the save: `setup.sh` asks once, the Master asks if it is still empty, and it can be switched at any time. Scripts return quest text and check messages already in the save language.
@@ -185,6 +200,7 @@ node game/cli.js lang set uk      # or en
 | `dev/github/`             | Script that seeds labels, the board, and issues                                  |
 | `tests/`                  | `node:test` suites                                                               |
 | `setup.sh`                | Player-facing setup script                                                       |
+| `tts/`                    | Optional voices: `speak.js`, `install.sh`, pinned `requirements.txt` and `models.txt` |
 | `CLAUDE.md`               | Rules and session routine for Claude Code                                        |
 
 ## How it gets built

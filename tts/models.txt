@@ -1,0 +1,5 @@
+# Voice models for tts/speak.js, one per line: file, sha256, url. Installed into tts/models/ by tts/install.sh.
+# The URLs point at one fixed commit of https://huggingface.co/rhasspy/piper-voices, so they never change.
+# uk_UA-ukrainian_tts-medium: 3 speakers (lada, mykyta, tetiana), dataset license CC0.
+uk_UA-ukrainian_tts-medium.onnx 7920419ac5f6fd8b6450520f24b52ed5a319cb53dd018fbcd71c9e079cbac84f https://huggingface.co/rhasspy/piper-voices/resolve/5ec43b186ef915a195d3ddbcfd9916e76c503c3f/uk/uk_UA/ukrainian_tts/medium/uk_UA-ukrainian_tts-medium.onnx
+uk_UA-ukrainian_tts-medium.onnx.json 4e96e72917ca9b94edc77d6ccfee03a73f450ba2fc1ca93c2e562bc014e5aa55 https://huggingface.co/rhasspy/piper-voices/resolve/5ec43b186ef915a195d3ddbcfd9916e76c503c3f/uk/uk_UA/ukrainian_tts/medium/uk_UA-ukrainian_tts-medium.onnx.json

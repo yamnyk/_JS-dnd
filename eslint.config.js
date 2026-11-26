@@ -72,7 +72,18 @@ const NOT_AN_ERROR =
 const GUARD_MESSAGE = 'Player-facing text belongs in the language catalogs (game/locales, quests/text), not here.';
 
 export default [
-  { ignores: ['node_modules/**', 'data/**', 'player/**', '.dev/**', 'game/dice.js', 'game/rolls.js'] },
+  {
+    ignores: [
+      'node_modules/**',
+      'data/**',
+      'player/**',
+      '.dev/**',
+      'game/dice.js',
+      'game/rolls.js',
+      'tts/.venv/**',
+      'tts/models/**',
+    ],
+  },
   { files: ['**/*.js'], languageOptions: { ecmaVersion: 'latest', sourceType: 'module' }, rules },
   {
     files: playerFacing,

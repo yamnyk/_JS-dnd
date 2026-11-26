@@ -1,0 +1,12 @@
+# Pinned Python packages for the optional voices. Installed into tts/.venv by: bash setup.sh --tts
+coloredlogs==15.0.1
+flatbuffers==25.12.19
+humanfriendly==10.0
+mpmath==1.3.0
+numpy==2.0.2
+onnxruntime==1.19.2
+packaging==26.3
+pathvalidate==3.3.1
+piper-tts==1.8.0
+protobuf==6.33.6
+sympy==1.14.0

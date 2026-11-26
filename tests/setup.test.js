@@ -294,3 +294,35 @@ test('the question is shown only once, and an answered language skips it', () =>
   assert.doesNotMatch(result.stdout, /Language \/ Мова/);
   assert.deepEqual(calls(dir), ['init', 'lang set uk']);
 });
+
+// The voices are optional: only --tts installs them, and a failed install never stops setup.
+const stubVoices = (dir, script) => {
+  mkdirSync(join(dir, 'tts'));
+  writeFileSync(join(dir, 'tts', 'install.sh'), script);
+};
+const runWithArgs = (dir, args, env) =>
+  spawnSync('/bin/bash', [join(dir, 'setup.sh'), ...args], { cwd: dir, env, encoding: 'utf8' });
+
+test('setup.sh installs the voices only when asked with --tts', () => {
+  for (const [args, expected] of [
+    [[], false],
+    [['--tts'], true],
+  ]) {
+    const dir = stubInstall();
+    stubVoices(dir, `#!/bin/sh\ntouch "${dir}/voices-called"\n`);
+    const result = runWithArgs(dir, args, { PATH: withNpm('#!/bin/sh\nexit 0\n') });
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(existsSync(join(dir, 'voices-called')), expected, args.join(' '));
+    assert.match(result.stdout, /Setup complete/);
+  }
+});
+
+test('a failing voice install says why and setup still completes', () => {
+  const dir = stubInstall();
+  stubVoices(dir, '#!/bin/sh\necho "python3 is missing" >&2\nexit 1\n');
+  const result = runWithArgs(dir, ['--tts'], { PATH: withNpm('#!/bin/sh\nexit 0\n') });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stderr, /Could not install the voices/);
+  assert.match(result.stderr, /python3 is missing/);
+  assert.match(result.stdout, /Setup complete/);
+});

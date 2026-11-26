@@ -31,6 +31,13 @@ A D&D-style adventure played in the terminal where every quest is a JS task. Pub
 - Ukrainian text is a draft until Gogi has reviewed it. Any new or changed Ukrainian text is added to `docs/i18n/uk-review-checklist.md` (the review gate).
 - The Master brief `.claude/skills/play/` and all developer text stay English.
 
+## Voices (optional)
+
+- `bash setup.sh --tts` installs Piper into `tts/.venv` and the voice models into `tts/models/` (both gitignored). Versions and checksums are pinned in `tts/requirements.txt` and `tts/models.txt`: change them there, never by hand in the venv. Nothing downloads without the flag.
+- `bash play.sh --tts` adds `tts/master-note.txt` to the Master's system prompt and allows `node tts/speak.js *` for that launch only. The `play` skill brief is untouched, so players without voices pay no tokens for it.
+- `node tts/speak.js --skip` stops the speaking line and clears the queue. The player can run it with `!` in Claude Code, which costs no model turn.
+- `tts/speak.js` returns at once, queues the sound, and picks the speaker from the NPC's gender (`f` or `m`) and name. The uk_UA model knows only lowercase letters and a plain apostrophe, so `prepareText` lowercases and normalizes. Only Ukrainian has a voice for now.
+
 ## Hero vitals
 
 - Health, gold, and items live in SQLite (`game/vitals.js`, `game/inventory.js`). The status line shows them above the stamina bar (`game/hero-line.js`). Max HP is the class hit die plus the CON modifier (`game/hero-stats.js`, `game/rules.js`).

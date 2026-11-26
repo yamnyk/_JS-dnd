@@ -31,8 +31,23 @@ if [ -n "$VERSION" ] && older_than "$VERSION" "$MIN_VERSION"; then
   echo "Claude Code $VERSION is older than $MIN_VERSION, the oldest version this game supports. It may cost more tokens or miss features. Update Claude Code if anything looks off." >&2
 fi
 
+# --tts turns on voice mode: NPC speech is read aloud by tts/speak.js (install it with: bash setup.sh --tts).
+# The flag is ours, so it is taken out of the arguments that go to Claude Code.
+TTS=""
+PASS=()
+for arg in "$@"; do
+  if [ "$arg" = "--tts" ]; then TTS=1; else PASS+=("$arg"); fi
+done
+
+ALLOW=("Bash(node game/cli.js *)")
+VOICE=()
+if [ -n "$TTS" ]; then
+  ALLOW+=("Bash(node tts/speak.js *)")
+  VOICE=(--append-system-prompt "$(cat "$HERE/tts/master-note.txt")")
+fi
+
 # The prompt goes first because --allowedTools takes a list and would swallow a prompt placed after it.
 # The whole session starts on Sonnet, because a skill's model setting only lasts one turn. The game
 # commands are pre-approved for this launch only: nothing is committed to the project settings.
 # Extra arguments go last, for example: bash play.sh --continue
-exec claude "/play" --model sonnet --allowedTools "Bash(node game/cli.js *)" "$@"
+exec claude "/play" --model sonnet ${VOICE[@]+"${VOICE[@]}"} --allowedTools "${ALLOW[@]}" ${PASS[@]+"${PASS[@]}"}
